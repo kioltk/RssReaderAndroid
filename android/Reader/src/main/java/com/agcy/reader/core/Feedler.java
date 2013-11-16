@@ -1,48 +1,71 @@
 package com.agcy.reader.core;
 
-import android.os.StrictMode;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.os.Handler;
 
+import com.agcy.reader.Models.Feedly.Feed;
+import com.agcy.reader.Models.Feedly.Stream;
+import com.agcy.reader.core.Feedly.Entries;
+import com.agcy.reader.core.Feedly.Feeds;
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URI;
+import java.util.ArrayList;
 
 public class Feedler{
-
-    public static String url;
+    public static SharedPreferences accessStorage;
+     public static String url;
     private static String redirect_uri = "http://localhost";
-    private  static String client_id = "sandbox";
+    private static String client_id = "sandbox";
     private static String client_secret = "Z5ZSFRASVWCV3EFATRUY";
     private static String refresh_token;
     private static String access_token;
-    public static void startLogin(){
-        url ="http://sandbox.feedly.com/v3/auth/auth?response_type=code";
+    public static String code;
 
+    public static void initialization(){
+        Feeds.initalization();
+        Entries.initalization();
+    }
 
-        url = url +
+    public static void setAccess(SharedPreferences _accessStorage){
+        accessStorage = _accessStorage;
+        refresh_token  = accessStorage.getString("refresh_token", "");
+
+    }
+    public static void saveAccess(){
+        SharedPreferences.Editor editor = accessStorage.edit();
+        editor.putString("refresh_token", refresh_token);
+        editor.apply();
+    }
+
+    public static Boolean isLogined() {
+        if (refresh_token.equals("")){
+            return false;
+        }
+        initialization();
+        return true;
+    }
+
+    public static String getLoginUrl(){
+
+        String loginUrl ="http://sandbox.feedly.com/v3/auth/auth?response_type=code";
+        loginUrl = loginUrl +
                 "&client_id="+client_id +
                 "&redirect_uri="+redirect_uri+
                 "&scope=https://cloud.feedly.com/subscriptions";
-    }
-    public static String code;
 
-    public static void endLogin(String requestCode) {
+        return loginUrl;
+    }
+    public static void endLogin(String requestCode,AsyncHttpResponseHandler handler) {
         String grant_type;
-        url ="http://sandbox.feedly.com/v3/auth/token?";
+        String loginUrl ="http://sandbox.feedly.com/v3/auth/token?";
         code = requestCode;
         grant_type = "authorization_code";
-        url = url +
+        loginUrl = loginUrl +
                 "code="+ code +
                 "&client_id="+client_id+
                 "&client_secret="+client_secret+
@@ -51,67 +74,69 @@ public class Feedler{
         AsyncHttpClient client = new AsyncHttpClient();
         RequestParams params = new RequestParams();
 
-        AsyncHttpResponseHandler handler = new AsyncHttpResponseHandler(){
-            @Override
-            public void onStart() {
 
-            }
-
-            @Override
-            public void onSuccess(String response) {
-                LoginResponse lr = new Gson().fromJson(response,LoginResponse.class);
-                refresh_token = lr.refresh_token;
-                access_token = lr.access_token;
-                String st = getFeed();
-            }
-
-            @Override
-            public void onFailure(Throwable e, String response) {
-            }
-
-            @Override
-            public void onFinish() {
-
-            }
-        };
-
-        client.post(url, handler);
+        client.post(loginUrl, handler);
     }
-    public static void refreshLogin() {
+    public static void updateLogin(AsyncHttpResponseHandler handler) {
+
         String grant_type;
-        url ="http://sandbox.feedly.com/v3/auth/token?";
+        String updateUrl ="http://sandbox.feedly.com/v3/auth/token?";
         grant_type = "refresh_token";
-        url = url +
+        updateUrl = updateUrl +
                 "refresh_token="+ refresh_token +
                 "&client_id="+client_id+
                 "&client_secret="+client_secret+
+                "&redirect_uri="+redirect_uri+
                 "&grant_type="+grant_type;
         AsyncHttpClient client = new AsyncHttpClient();
-        RequestParams params = new RequestParams();
 
-        AsyncHttpResponseHandler handler = new AsyncHttpResponseHandler(){
-            @Override
-            public void onStart() {
-            }
 
-            @Override
-            public void onSuccess(String response) {
-                LoginResponse lr = new Gson().fromJson(response,LoginResponse.class);
-                access_token = lr.access_token;
-            }
-
-            @Override
-            public void onFailure(Throwable e, String response) {
-            }
-
-            @Override
-            public void onFinish() {
-
-            }
-        };
-
-        client.post(url, handler);
+        client.post(updateUrl, handler);
     }
+    public static void updateIn(int expires_in) {
+
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                AsyncHttpResponseHandler backgroundUpdate = new AsyncHttpResponseHandler(){
+                    @Override
+                    public void onStart() {
+
+                    }
+
+                    @Override
+                    public void onSuccess(String response) {
+                        Feedler.LoginResponse lr = new Gson().fromJson(response,Feedler.LoginResponse.class);
+                        Feedler.setToken(lr.access_token);
+                        Feedler.updateIn(lr.expires_in);
+                    }
+
+                    @Override
+                    public void onFailure(Throwable e, String response) {
+                    }
+
+                    @Override
+                    public void onFinish() {
+
+                    }
+                };
+                updateLogin(backgroundUpdate);
+            }
+        }, expires_in*1000);
+
+    }
+
+    public static String getToken(){
+        return access_token;
+    }
+    public static void setToken(String _access_token) {
+        access_token = _access_token;
+    }
+    public static void setUpdateToken(String _refresh_token) {
+        refresh_token = _refresh_token;
+        saveAccess();
+    }
+
     public class LoginResponse{
         public String id;
         public String  access_token;
@@ -125,49 +150,31 @@ public class Feedler{
         }
     }
 
-
-
-
-
-    public static String getFeed(){
-        //curl -u user:password http://sample.campfirenow.com/rooms.xml
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-        StringBuffer stringBuffer = new StringBuffer("");
-        BufferedReader bufferedReader = null;
-        try {
-            HttpClient httpClient = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet();
-
-            URI uri = new URI("http://sandbox.feedly.com/v3/profile");
-            httpGet.setURI(uri);
-            httpGet.addHeader("Authorization", " OAuth "+access_token);
-
-            HttpResponse httpResponse = httpClient.execute(httpGet);
-            InputStream inputStream = httpResponse.getEntity().getContent();
-            bufferedReader = new BufferedReader(new InputStreamReader(
-                    inputStream));
-
-            String readLine = bufferedReader.readLine();
-            while (readLine != null) {
-                stringBuffer.append(readLine);
-                stringBuffer.append("\n");
-                readLine = bufferedReader.readLine();
-            }
-        } catch (Exception e) {
-            String st = e.getLocalizedMessage();
-        } finally {
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch (IOException e) {
-                    // TODO: handle exception
-                }
-            }
+    public static class feedLoader extends Loader{
+        public feedLoader(Context context) {
+            super();
+            baseUrl = "http://sandbox.feedly.com/v3/subscriptions";
         }
-        return stringBuffer.toString();
-
+        public String data ="";
+        public void chewData(){
+            Feed[] array;
+            array = (Feed[])java.lang.reflect.Array.newInstance(Feed.class,0);
+            ArrayList<Feed> s = new Gson().fromJson(data, new TypeToken<ArrayList<Feed>>(){}.getType());
+            Feeds.add(s);
+        }
     }
+    public static class entryLoader extends Loader{
+        public entryLoader(String feedId) {
+
+            baseUrl = "http://sandbox.feedly.com/v3/streams/contents?streamId="+feedId;
+        }
+        public String data ="";
+        public void chewData(){
+            Stream s = new Gson().fromJson(data, Stream.class);
+            Entries.add(s.items);
+        }
+    }
+
 
 
 

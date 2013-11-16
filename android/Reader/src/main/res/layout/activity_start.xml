@@ -7,14 +7,26 @@
     android:orientation="vertical"
     android:gravity="center">
 
+    <ProgressBar
+
+        android:id="@+id/startStatusBar"
+        style="?android:attr/progressBarStyleLarge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        />
+
     <TextView
 
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hi there. At first we want you to sign in your feedly account." />
+        android:text="Loading"
+        android:id="@+id/startStatusText"/>
+
     <Button
         android:layout_gravity="center"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:text="Feedly login"
         android:id="@+id/signinbutton"/>
 </LinearLayout>

@@ -7,28 +7,25 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
-import com.agcy.reader.Models.Feedly.Feed;
+import com.agcy.reader.Models.Feedly.Entry;
 import com.agcy.reader.R;
 import com.loopj.android.image.SmartImageView;
 
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Created by kiolt_000 on 02.11.13.
- */
-public class RssListAdapter extends BaseAdapter {
+public class entrySimpleItemAdapter extends BaseAdapter {
 
-    private List<Feed> items = Collections.emptyList();
+    private List<Entry> items = Collections.emptyList();
 
     private final Context context;
 
     // the context is needed to inflate views in getView()
-    public RssListAdapter(Context context) {
+    public entrySimpleItemAdapter(Context context) {
         this.context = context;
     }
 
-    public void updateItems(List<Feed> bananaPhones) {
+    public void updateItems(List<Entry> bananaPhones) {
         this.items = bananaPhones;
         notifyDataSetChanged();
     }
@@ -41,7 +38,7 @@ public class RssListAdapter extends BaseAdapter {
     // getItem(int) in Adapter returns Object but we can override
     // it to BananaPhone thanks to Java return type covariance
     @Override
-    public Feed getItem(int position) {
+    public Entry getItem(int position) {
         return items.get(position);
     }
 
@@ -63,13 +60,14 @@ public class RssListAdapter extends BaseAdapter {
         TextView dateView = (TextView) rootView.findViewById(R.id.date);
         TextView linkView = (TextView) rootView.findViewById(R.id.link);
 
-        Feed rssItem = getItem(position);
+        Entry entryItem = getItem(position);
 
-        titleView.setText(rssItem.title);
-        descriptionView.setText(rssItem.title);
-        //imageView.setImageUrl(rssItem.);
-        dateView.setText(rssItem.state);
-        linkView.setText(rssItem.id);
+        titleView.setText(entryItem.title);
+        descriptionView.setText(entryItem.summary.content);
+        if (entryItem.visual!=null)
+            imageView.setImageUrl(entryItem.visual.url);
+        dateView.setText(String.valueOf(entryItem.published));
+        linkView.setText(entryItem.originId);
         return rootView;
     }
 

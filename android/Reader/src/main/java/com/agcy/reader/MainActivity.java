@@ -16,12 +16,15 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.agcy.reader.CustomViews.RssListAdapter;
+import com.agcy.reader.CustomViews.entrySimpleItemAdapter;
+import com.agcy.reader.Models.Feedly.Feed;
 import com.agcy.reader.Models.RssChannel;
 import com.agcy.reader.Models.RssItem;
 import com.agcy.reader.core.Feedler;
-import com.agcy.reader.core.Parser;
+import com.agcy.reader.core.Feedler.feedLoader;
+import com.agcy.reader.core.Feedly.Entries;
+import com.agcy.reader.core.Feedly.Feeds;
 import com.agcy.reader.core.Speaker;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 
 import java.util.Locale;
 
@@ -31,79 +34,68 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     Context context;
     int readingPosition = 0;
     TextView connView;
+    ListView rssList;
+    RssListAdapter adapter;
+    ListView entriesView;
+    entrySimpleItemAdapter entriesAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         context = this;
         connView = (TextView) findViewById(R.id.conn);
-        AsyncHttpResponseHandler handler = new AsyncHttpResponseHandler(){
-            @Override
-            public void onStart() {
 
-                connView.setText("Started");
-            }
+        adapter = new RssListAdapter(this);
+        entriesAdapter = new entrySimpleItemAdapter(this);
 
-            @Override
-            public void onSuccess(String response) {
+        rssList = (ListView) findViewById(R.id.rssFeed);
+        rssList.setAdapter(adapter);
 
-
-                connView.setText("success");
-                Parser parser= new Parser(response);
-                parser.execute();
-
-                if(parser.status.equals("success"))
-                {
-                    channel = parser.response;
-                    RssListAdapter adapter = new RssListAdapter(context);
-                    adapter.updateItems(channel.items);
-                    ListView rssFeedView = (ListView) findViewById(R.id.rssFeed);
-                    rssFeedView.setAdapter(adapter);
-                }
-
-            }
-
-            @Override
-            public void onFailure(Throwable e, String response) {
-
-                connView.setText("fail");
-            }
-
-            @Override
-            public void onFinish() {
-
-                // ((TextView)findViewById(R.id.status)).setText("Finished");
-            }
-        };
-
+        entriesView = (ListView) findViewById(R.id.entriesView);
+        entriesView.setAdapter(entriesAdapter);
         Intent checkTTSIntent = new Intent();
         checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
         startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
 
+        final feedLoader task = new Feedler.feedLoader(this) {
+            @Override
+            public void onPostExecute(String result) {
+                data = result;
+                chewData();
+                adapter.updateItems(Feeds.list());
+            }
+        };
 
 
-        //Loader.getFeed(handler);
-        String st= Feedler.getFeed();
-
-        Button buttonRead = (Button) findViewById(R.id.readButton);
-        buttonRead.setOnClickListener(new View.OnClickListener() {
+        Button readButton = (Button) findViewById(R.id.readButton);
+        readButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                if (channel!=null){
-
-
-
-
-                    RssItem item = channel.items.get(readingPosition);
-
-                    Speaker.speak(item.description);
-
-
-
-
+                if (!adapter.isEmpty()){
+                    Feed item = adapter.getItem(readingPosition);
+                    Speaker.speak(item.title);
+                    final Feedler.entryLoader task = new Feedler.entryLoader(item.id) {
+                        @Override
+                        public void onPostExecute(String result) {
+                            data = result;
+                            chewData();
+                            entriesAdapter.updateItems(Entries.list());
+                        }
+                    };
+                    task.start();
 
                 }
+            };
+
+
+        });
+
+        Button loadButton = (Button) findViewById(R.id.loadButton);
+        loadButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                task.start();
             };
 
 
