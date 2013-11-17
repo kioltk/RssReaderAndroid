@@ -10,6 +10,7 @@ import java.util.HashMap;
 public class Speaker  {
     private int MY_DATA_CHECK_CODE = 0;
     public static TextToSpeech myTTS;
+
     public static void speak(String content) {
         //speak straight away
         if (myTTS.isSpeaking())

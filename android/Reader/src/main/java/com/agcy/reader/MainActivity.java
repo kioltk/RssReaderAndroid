@@ -9,20 +9,18 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.speech.tts.UtteranceProgressListener;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.agcy.reader.CustomViews.RssListAdapter;
-import com.agcy.reader.CustomViews.entrySimpleItemAdapter;
-import com.agcy.reader.Models.Feedly.Feed;
+import com.agcy.reader.CustomViews.SimpleFeedListAdapter;
 import com.agcy.reader.Models.RssChannel;
-import com.agcy.reader.Models.RssItem;
 import com.agcy.reader.core.Feedler;
 import com.agcy.reader.core.Feedler.feedLoader;
-import com.agcy.reader.core.Feedly.Entries;
 import com.agcy.reader.core.Feedly.Feeds;
 import com.agcy.reader.core.Speaker;
 
@@ -32,12 +30,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private int MY_DATA_CHECK_CODE = 0;
     RssChannel channel;
     Context context;
-    int readingPosition = 0;
     TextView connView;
-    ListView rssList;
-    RssListAdapter adapter;
-    ListView entriesView;
-    entrySimpleItemAdapter entriesAdapter;
+    ListView feedView;
+    SimpleFeedListAdapter feedListAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,60 +42,53 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         context = this;
         connView = (TextView) findViewById(R.id.conn);
 
-        adapter = new RssListAdapter(this);
-        entriesAdapter = new entrySimpleItemAdapter(this);
+        feedListAdapter = new SimpleFeedListAdapter(this);
 
-        rssList = (ListView) findViewById(R.id.rssFeed);
-        rssList.setAdapter(adapter);
+        feedView = (ListView) findViewById(R.id.feedView);
+        feedView.setAdapter(feedListAdapter);
 
-        entriesView = (ListView) findViewById(R.id.entriesView);
-        entriesView.setAdapter(entriesAdapter);
         Intent checkTTSIntent = new Intent();
         checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
         startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
+        connView.setText("Loading feeds");
 
         final feedLoader task = new Feedler.feedLoader(this) {
             @Override
             public void onPostExecute(String result) {
                 data = result;
                 chewData();
-                adapter.updateItems(Feeds.list());
+                feedListAdapter.updateItems(Feeds.list());
             }
         };
 
 
-        Button readButton = (Button) findViewById(R.id.readButton);
-        readButton.setOnClickListener(new View.OnClickListener() {
+
+
+
+        feedView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
-            public void onClick(View v) {
-                if (!adapter.isEmpty()){
-                    Feed item = adapter.getItem(readingPosition);
-                    Speaker.speak(item.title);
-                    final Feedler.entryLoader task = new Feedler.entryLoader(item.id) {
-                        @Override
-                        public void onPostExecute(String result) {
-                            data = result;
-                            chewData();
-                            entriesAdapter.updateItems(Entries.list());
-                        }
-                    };
-                    task.start();
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                }
-            };
+                Speaker.speak("loading");
+                Bundle basket = new Bundle();
+                basket.putString("feedId", feedListAdapter.getItem(position).id);
 
-
+                Intent intent = new Intent(context, EntryActivity.class);
+                intent.putExtras(basket);
+                startActivity(intent);
+            }
         });
 
         Button loadButton = (Button) findViewById(R.id.loadButton);
-        loadButton.setOnClickListener(new View.OnClickListener() {
+        /*loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                task.start();
             };
 
 
-        });
+        });*/
+        loadButton.setVisibility(View.GONE);
+        task.start();
     }
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -119,7 +108,22 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
 
+        getMenuInflater().inflate(R.menu.main, menu);
         return true;
+    }
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+        if (id == R.id.action_logout) {
+            Feedler.logout();
+            Intent intent = new Intent(context, StartActivity.class);
+            startActivity(intent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
@@ -139,10 +143,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
                     @Override
                     public void onDone(String utteranceId) {
-                        readingPosition++;
+                        /*readingPosition++;
                         RssItem item = channel.items.get(readingPosition);
 
-                        Speaker.speak(item.description);
+                        Speaker.speak(item.description);*/
 
                     }
 

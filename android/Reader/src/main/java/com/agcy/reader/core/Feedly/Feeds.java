@@ -34,4 +34,8 @@ public class Feeds {
     }
 
 
+    public static void clear() {
+
+        feeds =null;
+    }
 }

@@ -18,7 +18,7 @@ public class Feed {
     public int subscribers;
     public String state;
     public Feed(){
-
+       entries = new ArrayList<Entry>();
     }
 
 

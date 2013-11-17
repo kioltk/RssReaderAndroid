@@ -33,4 +33,8 @@ public class Entries {
         return new ArrayList<Entry>(entries.values());
     }
 
+    public static void clear() {
+
+        entries = null;
+    }
 }

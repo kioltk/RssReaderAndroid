@@ -17,19 +17,19 @@ import java.util.List;
 /**
  * Created by kiolt_000 on 02.11.13.
  */
-public class RssListAdapter extends BaseAdapter {
+public class SimpleFeedListAdapter extends BaseAdapter {
 
     private List<Feed> items = Collections.emptyList();
 
     private final Context context;
 
     // the context is needed to inflate views in getView()
-    public RssListAdapter(Context context) {
+    public SimpleFeedListAdapter(Context context) {
         this.context = context;
     }
 
-    public void updateItems(List<Feed> bananaPhones) {
-        this.items = bananaPhones;
+    public void updateItems(List<Feed> feeds) {
+        this.items = feeds;
         notifyDataSetChanged();
     }
 

@@ -1,5 +1,7 @@
 package com.agcy.reader.Models.Feedly;
 
+import android.text.Html;
+
 import java.util.ArrayList;
 
 /**
@@ -9,6 +11,11 @@ public class Entry {
     public String id;
     public Boolean unread;
     public Content summary;
+    public String content(){
+        String content = Html.fromHtml(summary.content).toString();
+        content = content.replace("￼","");
+        return content;
+    }
     public String title;
     public long published;
     public String author;

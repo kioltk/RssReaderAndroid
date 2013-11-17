@@ -40,6 +40,7 @@ public class Loader extends AsyncTask<String, Integer, String>  {
             httpGet.addHeader("Authorization", " OAuth "+Feedler.getToken());
 
             HttpResponse httpResponse = httpClient.execute(httpGet);
+
             InputStream inputStream = httpResponse.getEntity().getContent();
             bufferedReader = new BufferedReader(new InputStreamReader(
                     inputStream));

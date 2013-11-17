@@ -6,6 +6,7 @@ import android.os.Handler;
 
 import com.agcy.reader.Models.Feedly.Feed;
 import com.agcy.reader.Models.Feedly.Stream;
+import com.agcy.reader.core.Feedly.Categories;
 import com.agcy.reader.core.Feedly.Entries;
 import com.agcy.reader.core.Feedly.Feeds;
 import com.google.gson.Gson;
@@ -24,11 +25,17 @@ public class Feedler{
     private static String client_secret = "Z5ZSFRASVWCV3EFATRUY";
     private static String refresh_token;
     private static String access_token;
-    public static String code;
 
     public static void initialization(){
         Feeds.initalization();
         Entries.initalization();
+    }
+    public static void initialization(LoginResponse loginResponse) {
+        if(loginResponse.refresh_token!=null)
+            Feedler.setUpdateToken(loginResponse.refresh_token);
+        Feedler.setToken(loginResponse.access_token);
+        Feedler.updateIn(loginResponse.expires_in);
+        initialization();
     }
 
     public static void setAccess(SharedPreferences _accessStorage){
@@ -41,12 +48,22 @@ public class Feedler{
         editor.putString("refresh_token", refresh_token);
         editor.apply();
     }
+    public static void logout() {
+        SharedPreferences.Editor editor = accessStorage.edit();
+        editor.remove("refresh_token");
+        editor.apply();
+        accessStorage = null;
+        Feeds.clear();
+        Categories.clear();
+        Entries.clear();
+        refresh_token = null;
+        access_token = null;
+    }
 
     public static Boolean isLogined() {
         if (refresh_token.equals("")){
             return false;
         }
-        initialization();
         return true;
     }
 
@@ -63,10 +80,10 @@ public class Feedler{
     public static void endLogin(String requestCode,AsyncHttpResponseHandler handler) {
         String grant_type;
         String loginUrl ="http://sandbox.feedly.com/v3/auth/token?";
-        code = requestCode;
+
         grant_type = "authorization_code";
         loginUrl = loginUrl +
-                "code="+ code +
+                "code="+ requestCode +
                 "&client_id="+client_id+
                 "&client_secret="+client_secret+
                 "&redirect_uri="+redirect_uri+
@@ -137,6 +154,9 @@ public class Feedler{
         saveAccess();
     }
 
+
+
+
     public class LoginResponse{
         public String id;
         public String  access_token;
@@ -157,20 +177,23 @@ public class Feedler{
         }
         public String data ="";
         public void chewData(){
-            Feed[] array;
-            array = (Feed[])java.lang.reflect.Array.newInstance(Feed.class,0);
             ArrayList<Feed> s = new Gson().fromJson(data, new TypeToken<ArrayList<Feed>>(){}.getType());
             Feeds.add(s);
         }
     }
     public static class entryLoader extends Loader{
+        public String sourceId;
+        public String sourceType;
         public entryLoader(String feedId) {
-
-            baseUrl = "http://sandbox.feedly.com/v3/streams/contents?streamId="+feedId;
+            sourceId = feedId;
+            sourceType = "feed";
+            baseUrl = "http://sandbox.feedly.com/v3/streams/contents?streamId="+sourceId;
         }
         public String data ="";
         public void chewData(){
-            Stream s = new Gson().fromJson(data, Stream.class);
+           Stream s = new Gson().fromJson(data, Stream.class);
+           Feed f =  Feeds.get(s.id);
+                   f.entries.addAll(s.items);
             Entries.add(s.items);
         }
     }

@@ -20,4 +20,8 @@ public class Categories {
         categories = new HashMap<String, Category>();
     }
 
+    public static void clear() {
+
+        categories = null;
+    }
 }

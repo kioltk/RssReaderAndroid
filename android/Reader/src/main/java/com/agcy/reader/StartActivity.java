@@ -17,6 +17,7 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 
 public class StartActivity extends Activity {
     Context context;
+    Activity activity;
     TextView statusText;
     ProgressBar statusBar;
     Button loginButton;
@@ -26,14 +27,16 @@ public class StartActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
 
+        context = this;
+        activity = this;
+
         statusBar = (ProgressBar) findViewById(R.id.startStatusBar);
         statusText = (TextView) findViewById(R.id.startStatusText);
         loginButton = (Button) findViewById(R.id.signinbutton);
 
-        SharedPreferences ac = getSharedPreferences("access", Context.MODE_PRIVATE);
+        SharedPreferences access = getSharedPreferences("access", Context.MODE_PRIVATE);
 
-        Feedler.setAccess(ac);
-        context = this;
+        Feedler.setAccess(access);
         if(Feedler.isLogined()){
 
             Feedler.updateLogin(loginedStartHandler());
@@ -77,11 +80,11 @@ public class StartActivity extends Activity {
             @Override
             public void onSuccess(String response) {
                 Feedler.LoginResponse lr = new Gson().fromJson(response,Feedler.LoginResponse.class);
-                Feedler.setToken(lr.access_token);
-                Feedler.updateIn(lr.expires_in);
 
-                Intent refresh = new Intent(context, MainActivity.class);
-                startActivity(refresh);
+                Feedler.initialization(lr);
+                Intent main = new Intent(context, MainActivity.class);
+                startActivity(main);
+                activity.finish();
             }
 
             @Override

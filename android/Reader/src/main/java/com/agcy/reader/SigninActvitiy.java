@@ -3,6 +3,7 @@ package com.agcy.reader;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
@@ -11,6 +12,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.agcy.reader.core.Feedler;
 import com.google.gson.Gson;
@@ -20,25 +22,31 @@ public class SigninActvitiy extends Activity {
 
     Context context;
     Activity activity;
-    WebView myWebView;
+    TextView loginStatusText;
+    ProgressBar loginStatusBar;
+    WebView loginWebView;
+    String loginStatus = "loading";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signin);
 
+        context = this;
+        activity = this;
 
+        loginStatusBar = (ProgressBar) findViewById(R.id.loginStatusBar);
+        loginStatusText = (TextView) findViewById(R.id.loginStatusText);
+        loginWebView = (WebView) findViewById(R.id.loginWebView);
 
         String url = Feedler.getLoginUrl();
 
-        myWebView = (WebView) findViewById(R.id.webview);
         MyWebViewClient client = new MyWebViewClient();
-        myWebView.setWebViewClient(client);
-        WebSettings webSettings = myWebView.getSettings();
+        loginWebView.setWebViewClient(client);
+        WebSettings webSettings = loginWebView.getSettings();
         webSettings.setJavaScriptEnabled(true);
-        myWebView.loadUrl(url);
 
-        context = this;
-        activity = this;
+        loginWebView.loadUrl(url);
+        loginStatusText.setText("Loading");
 
     }
     private class MyWebViewClient extends WebViewClient {
@@ -49,12 +57,14 @@ public class SigninActvitiy extends Activity {
                     Intent refresh = new Intent(context, StartActivity.class);
                     startActivity(refresh);
                     activity.finish();
+                    Toast.makeText(context, "Could not access", Toast.LENGTH_SHORT).show();
                 }
                 else{
                     TextView loginStatusText = (TextView) findViewById(R.id.loginStatusText);
                     ProgressBar loginStatusBar = (ProgressBar) findViewById(R.id.loginStatusBar);
 
-                    myWebView.setVisibility(View.GONE);
+                    loginStatus="finished";
+                    loginWebView.setVisibility(View.GONE);
                     loginStatusText.setVisibility(View.VISIBLE);
                     loginStatusBar.setVisibility(View.VISIBLE);
                     loginStatusText.setText("Connecting to Feedly");
@@ -67,6 +77,25 @@ public class SigninActvitiy extends Activity {
             view.loadUrl(url);
             return false;
         }
+
+        @Override
+        public void onPageFinished(WebView view, String url){
+            if(loginStatus.equals("loading")){
+                loginStatusBar.setVisibility(View.GONE);
+                loginStatusText.setVisibility(View.GONE);
+                loginWebView.setVisibility(View.VISIBLE);
+            }
+        }
+
+        @Override
+        public void	onPageStarted(WebView view, String url, Bitmap favicon){
+
+                loginStatusBar.setVisibility(View.VISIBLE);
+                loginStatusText.setVisibility(View.VISIBLE);
+                loginWebView.setVisibility(View.GONE);
+
+        }
+
     }
 
     private AsyncHttpResponseHandler endLoginHandler(){
@@ -79,10 +108,11 @@ public class SigninActvitiy extends Activity {
         @Override
         public void onSuccess(String response) {
             Feedler.LoginResponse lr = new Gson().fromJson(response,Feedler.LoginResponse.class);
-            Feedler.setUpdateToken(lr.refresh_token);
-            Feedler.setToken(lr.access_token);
-            Feedler.updateIn(lr.expires_in);
-            //String st = Feedler.getFeed();
+
+            Feedler.initialization(lr);
+            Intent main = new Intent(context, MainActivity.class);
+            startActivity(main);
+            activity.finish();
         }
 
         @Override
@@ -91,8 +121,6 @@ public class SigninActvitiy extends Activity {
 
         @Override
         public void onFinish() {
-            Intent main = new Intent(context, MainActivity.class);
-            startActivity(main);
         }
     };
     }
