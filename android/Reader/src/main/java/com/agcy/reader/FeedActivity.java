@@ -1,107 +1,102 @@
 package com.agcy.reader;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.TextView;
 
-import com.agcy.reader.CustomViews.entrySimpleItemAdapter;
-import com.agcy.reader.Models.Feedly.Entry;
-import com.agcy.reader.Models.Feedly.Feed;
+import com.agcy.reader.CustomViews.SimpleFeedListAdapter;
 import com.agcy.reader.core.Feedler;
+import com.agcy.reader.core.Feedler.feedLoader;
 import com.agcy.reader.core.Feedly.Feeds;
-import com.agcy.reader.core.Speaker;
 
-public class FeedActivity extends Activity {
+public class FeedActivity extends Activity  {
+    private int MY_DATA_CHECK_CODE = 0;
 
-    ListView entriesView;
-    entrySimpleItemAdapter entriesAdapter;
-    TextView loadingStatus;
-    Button readButton;
-    int readingPosition = 0;
-    Feed feed;
+    Context context;
+    ListView feedView;
+    SimpleFeedListAdapter feedListAdapter;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed);
 
-        entriesAdapter = new entrySimpleItemAdapter(this);
-        entriesView = (ListView) findViewById(R.id.entriesView);
-        entriesView.setAdapter(entriesAdapter);
-        loadingStatus = (TextView) findViewById(R.id.feedLoadingStatusText);
-        readButton = (Button) findViewById(R.id.readButton);
+        context = this;
 
+        feedListAdapter = new SimpleFeedListAdapter(this);
 
-        Bundle bundle = this.getIntent().getExtras();
-        String feedId = bundle.getString("feedId");
-        feed = Feeds.get(feedId);
+        feedView = (ListView) findViewById(R.id.feedView);
+        feedView.setAdapter(feedListAdapter);
 
+        Intent checkTTSIntent = new Intent();
+        checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
+        startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
 
-
-         final Feedler.entryLoader task = new Feedler.entryLoader(feed.id) {
+        final feedLoader task = new Feedler.feedLoader() {
             @Override
             public void onPostExecute(String result) {
-
-                Speaker.speak("Loaded");
-                loadingStatus.setText("Loaded");
                 data = result;
                 chewData();
-                entriesAdapter.updateItems(feed.entries);
+                feedListAdapter.updateItems(Feeds.list());
             }
         };
-        if(feed.entries.isEmpty()){
-            Speaker.speak("Loading");
-            loadingStatus.setText("Loading");
-            task.start();
-        }
-        else{
-            Speaker.speak("Feed are ready");
-            loadingStatus.setText("Feed are ready");
-            entriesAdapter.updateItems(feed.entries);
-        }
 
-        readButton.setOnClickListener(new View.OnClickListener() {
+
+
+
+
+        feedView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                Bundle basket = new Bundle();
+                basket.putString("feedId", feedListAdapter.getItem(position).id);
+
+                Intent intent = new Intent(context, EntryActivity.class);
+                intent.putExtras(basket);
+                startActivity(intent);
+            }
+        });
+
+        /*loadButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
-                if (!entriesAdapter.isEmpty()){
-                    Entry item = entriesAdapter.getItem(readingPosition);
-                    Speaker.speak(item.summary.content.substring(0,1000));
-                }
             };
 
 
-        });
+        });*/
+        task.start();
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.feed, menu);
+
+        getMenuInflater().inflate(R.menu.main, menu);
         return true;
     }
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        if (id == R.id.action_settings) {
+        /*if (id == R.id.action_logout) {
+            Feedler.logout();
+            Intent intent = new Intent(context, StartActivity.class);
+            startActivity(intent);
             return true;
-        }
+        }*/
         return super.onOptionsItemSelected(item);
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
 
 
 }

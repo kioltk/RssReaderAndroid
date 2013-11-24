@@ -12,7 +12,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 
 import com.agcy.reader.Models.Feedly.Entry;
@@ -43,16 +43,19 @@ public class EntryActivity extends Activity {
     Feed feed;
     Context context;
     Entry currentEntry;
-    Button readButton;
+    ImageButton readButton;
+    TextView feedNameView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_entry);
 
         context = this;
-
+        feedNameView = (TextView) findViewById(R.id.feedNameView);
+        readButton = (ImageButton) findViewById(R.id.readButton);
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
+
         entriesAdapter = new EntryPagerAdapter(getFragmentManager());
 
         entryViewPager = (ViewPager) findViewById(R.id.pager);
@@ -75,42 +78,54 @@ public class EntryActivity extends Activity {
             }
         });
 
-        readButton = (Button) findViewById(R.id.readButton);
 
 
         Bundle bundle = this.getIntent().getExtras();
         String feedId = bundle.getString("feedId");
         feed = Feeds.get(feedId);
+        feedNameView.setText(feed.title);
+        if(Speaker.isSpeaking()){
+            readButton.setImageResource(R.drawable.play_button);
 
+        }else{
+            readButton.setImageResource(R.drawable.pause_button);
+        }
         final Feedler.entryLoader task = new Feedler.entryLoader(feed.id) {
             @Override
             public void onPostExecute(String result) {
 
-                Speaker.speak("Loaded");
                // loadingStatus.setText("Loaded");
                 data = result;
                 chewData();
                 entriesAdapter.updateItems(feed.entries);
-                currentEntry = feed.entries.get(0);
-                readButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        Speaker.speak(currentEntry.content());
-                    }
-                });
+
             }
         };
+        readButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(Speaker.isSpeaking()){
+                    readButton.setImageResource(R.drawable.pause_button);
+                    Speaker.stop();
+
+                }else{
+                    if(currentEntry != null){
+                        readButton.setImageResource(R.drawable.play_button);
+                        Speaker.speak(currentEntry.content());
+                    }
+                }
+            }
+        });
         if(feed.entries.isEmpty()){
-            Speaker.speak("Loading");
             //loadingStatus.setText("Loading");
             task.start();
         }
         else{
-            Speaker.speak("Feed are ready");
             //loadingStatus.setText("Feed are ready");
             entriesAdapter.updateItems(feed.entries);
         }
 
+        //
         // Set up the ViewPager with the sections adapter.
 
     }
@@ -153,6 +168,7 @@ public class EntryActivity extends Activity {
 
         public void updateItems(ArrayList<Entry> newEntries){
             items = newEntries;
+            currentEntry = feed.entries.get(0);
             notifyDataSetChanged();
         }
 

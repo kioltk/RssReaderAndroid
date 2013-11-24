@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Handler;
 
+import com.agcy.reader.Models.Feedly.Category;
 import com.agcy.reader.Models.Feedly.Feed;
 import com.agcy.reader.Models.Feedly.Stream;
 import com.agcy.reader.core.Feedly.Categories;
@@ -27,6 +28,7 @@ public class Feedler{
     private static String access_token;
 
     public static void initialization(){
+        Categories.initalization();
         Feeds.initalization();
         Entries.initalization();
     }
@@ -155,8 +157,6 @@ public class Feedler{
     }
 
 
-
-
     public class LoginResponse{
         public String id;
         public String  access_token;
@@ -171,7 +171,7 @@ public class Feedler{
     }
 
     public static class feedLoader extends Loader{
-        public feedLoader(Context context) {
+        public feedLoader() {
             super();
             baseUrl = "http://sandbox.feedly.com/v3/subscriptions";
         }
@@ -197,7 +197,17 @@ public class Feedler{
             Entries.add(s.items);
         }
     }
-
+    public static class categoryLoader extends Loader{
+        public categoryLoader(Context context) {
+            super();
+            baseUrl = "http://sandbox.feedly.com/v3/categories";
+        }
+        public String data ="";
+        public void chewData(){
+            ArrayList<Category> s = new Gson().fromJson(data, new TypeToken<ArrayList<Category>>(){}.getType());
+            Categories.add(s);
+        }
+    }
 
 
 

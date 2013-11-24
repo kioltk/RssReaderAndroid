@@ -2,6 +2,7 @@ package com.agcy.reader.core.Feedly;
 
 import com.agcy.reader.Models.Feedly.Category;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -15,6 +16,12 @@ public class Categories {
     }
     public static void add(Category category){
         categories.put(category.id,category);
+    }
+    public static void add(ArrayList<Category> categoriesList) {
+        for(int i = 0; i< categoriesList.size();i++){
+            Category feed = categoriesList.get(i);
+            categories.put(feed.id, feed);
+        }
     }
     public static void initalization(){
         categories = new HashMap<String, Category>();
