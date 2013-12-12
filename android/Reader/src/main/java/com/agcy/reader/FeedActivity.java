@@ -11,9 +11,8 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-import com.agcy.reader.CustomViews.SimpleFeedListAdapter;
+import com.agcy.reader.CustomViews.SimpleFeedAdapter;
 import com.agcy.reader.core.Feedler;
-import com.agcy.reader.core.Feedler.feedLoader;
 import com.agcy.reader.core.Feedly.Feeds;
 
 public class FeedActivity extends Activity  {
@@ -21,16 +20,17 @@ public class FeedActivity extends Activity  {
 
     Context context;
     ListView feedView;
-    SimpleFeedListAdapter feedListAdapter;
+    SimpleFeedAdapter feedListAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_feed);
 
+
         context = this;
 
-        feedListAdapter = new SimpleFeedListAdapter(this);
+        feedListAdapter = new SimpleFeedAdapter(this);
 
         feedView = (ListView) findViewById(R.id.feedView);
         feedView.setAdapter(feedListAdapter);
@@ -39,7 +39,7 @@ public class FeedActivity extends Activity  {
         checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
         startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
 
-        final feedLoader task = new Feedler.feedLoader() {
+        final Feedler.FeedLoader task = new Feedler.FeedLoader() {
             @Override
             public void onPostExecute(String result) {
                 data = result;
@@ -71,8 +71,8 @@ public class FeedActivity extends Activity  {
             };
 
 
-        });*/
-        task.start();
+        });
+        task.start();*/
     }
 
     @Override
@@ -88,7 +88,8 @@ public class FeedActivity extends Activity  {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-        /*if (id == R.id.action_logout) {
+        /*
+        if (id == R.id.action_logout) {
             Feedler.logout();
             Intent intent = new Intent(context, StartActivity.class);
             startActivity(intent);
@@ -96,6 +97,7 @@ public class FeedActivity extends Activity  {
         }*/
         return super.onOptionsItemSelected(item);
     }
+
 
 
 

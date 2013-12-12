@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:descendantFocusability="blocksDescendants"
+     android:layout_height="wrap_content">
+
+
+    <RelativeLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:gravity="center_vertical"
+            android:background="@drawable/category_simple"
+            android:id="@+id/content"
+            android:paddingLeft="10dp"
+            >
+
+            <TextView
+
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:text="title"
+                android:id="@+id/title"
+                android:textStyle="bold"
+                android:textSize="20dp"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="20dp"
+                android:layout_gravity="left|center_vertical" />
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="23"
+                    android:id="@+id/unreadCount"
+                    android:layout_gravity="center"
+                    android:layout_marginRight="12dp"/>
+                <ImageButton
+
+                    android:focusable="false"
+                    android:id="@+id/showFeeds"
+                    android:layout_width="60dp"
+                    android:layout_height="56dp"
+                    android:src="@drawable/ic_list"
+                    android:background="@drawable/category_simple_open_button"
+                    />
+            </LinearLayout>
+
+    </RelativeLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/contentView"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:visibility="gone">
+        <ListView
+            android:focusable="false"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:listSelector="#00000000"
+            android:id="@+id/categoryFeeds"
+            android:divider="#000000"
+            android:background="@drawable/category_simple_default"
+            android:dividerHeight="0dp"
+            android:scrollbars="none"
+
+            />
+    </FrameLayout>
+
+
+
+</LinearLayout>

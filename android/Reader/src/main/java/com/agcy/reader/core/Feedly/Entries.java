@@ -17,15 +17,15 @@ public class Entries {
     }
     public static void add(Entry entry){
         entries.put(entry.id, entry);
+        Feeds.chewEntry(entry);
     }
     public static void initalization(){
         entries = new HashMap<String, Entry>();
     }
 
     public static void add(ArrayList<Entry> entriesList) {
-        for(int i = 0; i< entriesList.size();i++){
-            Entry feed = entriesList.get(i);
-            entries.put(feed.id, feed);
+        for (Entry entry : entriesList) {
+            add(entry);
         }
     }
     public static List<Entry> list() {
@@ -36,5 +36,9 @@ public class Entries {
     public static void clear() {
 
         entries = null;
+    }
+
+    public static void markAsRead(String id) {
+
     }
 }

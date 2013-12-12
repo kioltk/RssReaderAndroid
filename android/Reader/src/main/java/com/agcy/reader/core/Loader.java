@@ -1,10 +1,16 @@
 package com.agcy.reader.core;
 
 import android.os.AsyncTask;
+import android.util.Log;
+
+import com.google.gson.Gson;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 
 import java.io.BufferedReader;
@@ -17,9 +23,10 @@ import java.net.URI;
  * Created by kiolt_000 on 01.11.13.
  */
 public class Loader extends AsyncTask<String, Integer, String>  {
-    static  String baseUrl = "http://sandbox.feedly.com/v3/profile";
-    static String methodName = "";
-
+    String baseUrl = "http://sandbox.feedly.com/v3/profile";
+    String methodName = "";
+    String methodType = "GET";
+    Object requestData;
     public void start(){
         execute("");
     }
@@ -33,14 +40,26 @@ public class Loader extends AsyncTask<String, Integer, String>  {
         StringBuffer stringBuffer = new StringBuffer("");
         try {
             HttpClient httpClient = new DefaultHttpClient();
-            HttpGet httpGet = new HttpGet();
+            HttpRequestBase httpRequest = null;
+            if(methodType.equals("GET")){
+                httpRequest = new HttpGet();
+            }
+            if(methodType.equals("POST")){
+                httpRequest = new HttpPost();
+            }
 
             URI uri = new URI(baseUrl);
-            httpGet.setURI(uri);
-            httpGet.addHeader("Authorization", " OAuth "+Feedler.getToken());
+            httpRequest.setURI(uri);
+            httpRequest.addHeader("Authorization", " OAuth "+Feedler.getToken());
 
-            HttpResponse httpResponse = httpClient.execute(httpGet);
-
+            if(requestData!=null){
+                httpRequest.addHeader("Content-type", "application/json");
+                httpRequest.addHeader("Accept", "application/json");
+                String json = new Gson().toJson(requestData);
+                StringEntity se = new StringEntity(json);
+                ((HttpPost)httpRequest).setEntity(se);
+            }
+            HttpResponse httpResponse = httpClient.execute(httpRequest);
             InputStream inputStream = httpResponse.getEntity().getContent();
             bufferedReader = new BufferedReader(new InputStreamReader(
                     inputStream));
@@ -54,6 +73,7 @@ public class Loader extends AsyncTask<String, Integer, String>  {
             }
         } catch (Exception e) {
             String st = e.getLocalizedMessage();
+            Log.e("agcylog",st);
         } finally {
             if (bufferedReader != null) {
                 try {

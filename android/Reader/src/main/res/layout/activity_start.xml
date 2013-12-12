@@ -1,34 +1,69 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:layout_centerVertical="true"
     tools:context=".StartActivity"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:background="@color/background">
-
-    <ProgressBar
-
-        android:id="@+id/startStatusBar"
-        style="?android:attr/progressBarStyleLarge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        />
-
-    <TextView
-
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Loading"
-        android:id="@+id/startStatusText"/>
-
-    <Button
-        android:layout_gravity="center"
-        android:layout_width="200dp"
-        android:layout_height="50dp"
-        android:text="Feedly"
+    android:orientation="vertical">
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="#f0f0f0"
+        android:scaleType="centerCrop" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:visibility="gone"
-        android:id="@+id/signinbutton"
-        android:background="@drawable/login_button"/>
-</LinearLayout>
+        android:orientation="vertical"
+        android:gravity="center"
+        android:id="@+id/statusView">
+        <ProgressBar
+            android:id="@+id/startStatusBar"
+            style="?android:attr/progressBarStyleLarge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            />
+
+        <TextView
+
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Loading"
+            android:id="@+id/startStatusText"/>
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/startStatusButton"
+            android:visibility="gone"
+            />
+    </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="visible"
+        android:id="@+id/loginView"
+        android:gravity="center_horizontal">
+        <TextView
+            android:layout_width="200dp"
+            android:layout_height="wrap_content"
+            android:text="Login with"
+            android:layout_marginBottom="10dp"
+            android:gravity="center"
+            android:layout_above="@+id/signinFeedly" />
+        <Button
+
+            android:layout_gravity="center"
+            android:layout_width="200dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="30dp"
+            android:text="Feedly"
+            android:id="@+id/signinFeedly"
+            android:background="@drawable/category_simple"
+            android:typeface="sans"
+            android:textColor="#484848"
+            android:layout_alignParentBottom="true"
+            />
+        </RelativeLayout>
+
+</RelativeLayout>

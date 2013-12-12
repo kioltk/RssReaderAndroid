@@ -2,7 +2,13 @@ package com.agcy.reader.Models.Feedly;
 
 import android.text.Html;
 
+import com.agcy.reader.core.Feedly.Feeds;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * Created by kiolt_000 on 16.11.13.
@@ -11,8 +17,13 @@ public class Entry {
     public String id;
     public Boolean unread;
     public Content summary;
+    public Origin origin;
     public String content(){
-        String content = Html.fromHtml(summary.content).toString();
+        String summary = this.summary.content;
+        if (summary==null){
+            summary="no content";
+        }
+        String content = Html.fromHtml(summary).toString();
         content = content.replace("￼","");
         return content;
     }
@@ -21,9 +32,32 @@ public class Entry {
     public String author;
     public String originId;
     public Visual visual;
-    public ArrayList<Category> categories;
     public Entry(){
+        categories = new ArrayList<Category>();
+        summary = new Content();
+        origin = new Origin();
+        visual = new Visual();
+    }
+    public ArrayList<Category> categories;
+    public String date() {
+        return new Date(published).toString();
+    }
 
+    public String getCategories() {
+        return new Gson().toJson(categories);
+    }
+
+    public void setCategories(String json) {
+
+        Type collectionType = new TypeToken<ArrayList<Category>>(){}.getType();
+        categories = new Gson().fromJson(json, collectionType);
+    }
+    public Feed feed;
+    public Feed feed(){
+        if(feed==null){
+           feed = Feeds.get(origin.streamId);
+        }
+        return feed;
     }
 
     public static class Visual{
@@ -31,6 +65,9 @@ public class Entry {
         public int height;
         public int width;
         public String contentType;
+        public Visual(){
+
+        }
     }
     public static class Link{
         public String url;

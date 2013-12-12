@@ -15,6 +15,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.agcy.reader.core.Feedler;
+import com.agcy.reader.core.Loader;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -69,7 +70,7 @@ public class SigninActvitiy extends Activity {
                     loginStatusBar.setVisibility(View.VISIBLE);
                     loginStatusText.setText("Connecting to Feedly");
                     String code = url.substring(url.indexOf("code=")+5,url.indexOf("&state"));
-
+                    Toast.makeText(context,code,2).show();
                     Feedler.endLogin(code, endLoginHandler());
                 }
             }
@@ -104,19 +105,37 @@ public class SigninActvitiy extends Activity {
         public void onStart() {
 
         }
-
+        Loader task2;
         @Override
         public void onSuccess(String response) {
+            Toast.makeText(context,response,2).show();
             Feedler.LoginResponse lr = new Gson().fromJson(response,Feedler.LoginResponse.class);
 
             Feedler.initialization(lr);
+
+
+            Toast.makeText(context,"переходим к главному активити",2).show();
+            //Feedler.downloadEntries();
+
             Intent main = new Intent(context, MainActivity.class);
             startActivity(main);
             activity.finish();
+
+            if(StartActivity.activity!=null)
+                StartActivity.activity.finish();
         }
 
         @Override
         public void onFailure(Throwable e, String response) {
+
+            Toast.makeText(context,"ошибка",2).show();
+
+            Toast.makeText(context,response,2).show();
+            Intent main = new Intent(context, StartActivity.class);
+            startActivity(main);
+            activity.finish();
+            if(StartActivity.activity!=null)
+                StartActivity.activity.finish();
         }
 
         @Override

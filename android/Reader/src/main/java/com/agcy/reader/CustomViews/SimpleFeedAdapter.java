@@ -7,9 +7,9 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.TextView;
 
+import com.agcy.reader.Helpers.Appearance;
 import com.agcy.reader.Models.Feedly.Feed;
 import com.agcy.reader.R;
-import com.loopj.android.image.SmartImageView;
 
 import java.util.Collections;
 import java.util.List;
@@ -17,14 +17,15 @@ import java.util.List;
 /**
  * Created by kiolt_000 on 02.11.13.
  */
-public class SimpleFeedListAdapter extends BaseAdapter {
+public class SimpleFeedAdapter extends BaseAdapter {
 
     private List<Feed> items = Collections.emptyList();
 
     private final Context context;
+    private int lastSlided = -1;
 
     // the context is needed to inflate views in getView()
-    public SimpleFeedListAdapter(Context context) {
+    public SimpleFeedAdapter(Context context) {
         this.context = context;
     }
 
@@ -55,21 +56,25 @@ public class SimpleFeedListAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View rootView = LayoutInflater.from(context)
-                .inflate(R.layout.rss_list_item, parent, false);
+                .inflate(R.layout.simple_feed, parent, false);
 
-        SmartImageView imageView = (SmartImageView) rootView.findViewById(R.id.image);
+        SuperImageView imageView = (SuperImageView) rootView.findViewById(R.id.icon);
         TextView titleView = (TextView) rootView.findViewById(R.id.title);
-        TextView descriptionView = (TextView) rootView.findViewById(R.id.description);
-        TextView dateView = (TextView) rootView.findViewById(R.id.date);
-        TextView linkView = (TextView) rootView.findViewById(R.id.link);
-
+        TextView unreadCountView = (TextView) rootView.findViewById(R.id.unreadCount);
         Feed rssItem = getItem(position);
 
         titleView.setText(rssItem.title);
-        descriptionView.setText(rssItem.title);
-        //imageView.setImageUrl(rssItem.);
-        dateView.setText(rssItem.state);
-        linkView.setText(rssItem.id);
+        imageView.setImageUrl(rssItem.icon());
+        unreadCountView.setText(String.valueOf(rssItem.unreadCount()));
+
+        if(position>=lastSlided ){
+            Appearance.slideFromBottom(rootView);
+        }else{
+
+            Appearance.slideFromTop(rootView);
+        }
+
+        lastSlided = position;
         return rootView;
     }
 

@@ -6,14 +6,11 @@
             >
 
             <solid
-                android:color="#d8d8d8"/>
+                android:color="#00d8d8d8"/>
 
             <stroke
-                android:width="3dp"
+                android:width="1dp"
                 android:color="#ffb300"
-                />
-            <corners
-                android:radius="2dp"
                 />
         </shape>
     </item>

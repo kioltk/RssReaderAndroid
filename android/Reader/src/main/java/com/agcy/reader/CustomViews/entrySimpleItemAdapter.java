@@ -5,11 +5,9 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.TextView;
 
 import com.agcy.reader.Models.Feedly.Entry;
 import com.agcy.reader.R;
-import com.loopj.android.image.SmartImageView;
 
 import java.util.Collections;
 import java.util.List;
@@ -52,8 +50,8 @@ public class entrySimpleItemAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View rootView = LayoutInflater.from(context)
-                .inflate(R.layout.rss_list_item, parent, false);
-
+                .inflate(R.layout.entry_page, parent, false);
+        /*
         SmartImageView imageView = (SmartImageView) rootView.findViewById(R.id.image);
         TextView titleView = (TextView) rootView.findViewById(R.id.title);
         TextView descriptionView = (TextView) rootView.findViewById(R.id.description);
@@ -68,6 +66,7 @@ public class entrySimpleItemAdapter extends BaseAdapter {
             imageView.setImageUrl(entryItem.visual.url);
         dateView.setText(String.valueOf(entryItem.published));
         linkView.setText(entryItem.originId);
+        */
         return rootView;
     }
 

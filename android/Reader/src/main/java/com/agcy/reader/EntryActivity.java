@@ -1,10 +1,13 @@
 package com.agcy.reader;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.Context;
+import android.os.Build;
 import android.os.Bundle;
+import android.speech.tts.UtteranceProgressListener;
 import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.view.LayoutInflater;
@@ -14,13 +17,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.agcy.reader.CustomViews.SuperImageView;
 import com.agcy.reader.Models.Feedly.Entry;
-import com.agcy.reader.Models.Feedly.Feed;
+import com.agcy.reader.Models.Feedly.Stream;
 import com.agcy.reader.core.Feedler;
+import com.agcy.reader.core.Feedly.Categories;
+import com.agcy.reader.core.Feedly.Entries;
 import com.agcy.reader.core.Feedly.Feeds;
 import com.agcy.reader.core.Speaker;
-import com.loopj.android.image.SmartImageView;
 
 import java.util.ArrayList;
 
@@ -40,18 +46,19 @@ public class EntryActivity extends Activity {
      * The {@link ViewPager} that will host the section contents.
      */
     ViewPager entryViewPager;
-    Feed feed;
-    Context context;
+    Stream source;
+    static Context context;
     Entry currentEntry;
     ImageButton readButton;
-    TextView feedNameView;
+    static View selectedEntryFullView;
+    static View selectedEntryTileView;
+    // TODO: прибить читалку к каждому итему
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_entry);
 
         context = this;
-        feedNameView = (TextView) findViewById(R.id.feedNameView);
         readButton = (ImageButton) findViewById(R.id.readButton);
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -81,23 +88,28 @@ public class EntryActivity extends Activity {
 
 
         Bundle bundle = this.getIntent().getExtras();
-        String feedId = bundle.getString("feedId");
-        feed = Feeds.get(feedId);
-        feedNameView.setText(feed.title);
+        String sourceId = bundle.getString("sourceId");
+        String sourceType = bundle.getString("sourceType");
+        if (sourceType.equals("category"))
+            source = Categories.getStream(sourceId);
+        else
+            source = Feeds.getStream(sourceId);
         if(Speaker.isSpeaking()){
             readButton.setImageResource(R.drawable.play_button);
-
         }else{
             readButton.setImageResource(R.drawable.pause_button);
         }
-        final Feedler.entryLoader task = new Feedler.entryLoader(feed.id) {
+        final Feedler.EntryLoader task = new Feedler.EntryLoader(source.id, sourceType) {
             @Override
             public void onPostExecute(String result) {
 
-               // loadingStatus.setText("Loaded");
                 data = result;
                 chewData();
-                entriesAdapter.updateItems(feed.entries);
+                if (sourceType.equals("category"))
+                    source = Categories.getStream(sourceId);
+                else
+                    source = Feeds.getStream(sourceId);
+                entriesAdapter.updateItems(source.items);
 
             }
         };
@@ -111,25 +123,51 @@ public class EntryActivity extends Activity {
                 }else{
                     if(currentEntry != null){
                         readButton.setImageResource(R.drawable.play_button);
-                        Speaker.speak(currentEntry.content());
+                        Speaker.speak(currentEntry);
+                        Speaker.setProgressListener(entrySpeaker());
                     }
                 }
             }
         });
-        if(feed.entries.isEmpty()){
-            //loadingStatus.setText("Loading");
-            task.start();
+        if(source.items.isEmpty()){
+            //task.start();
         }
         else{
-            //loadingStatus.setText("Feed are ready");
-            entriesAdapter.updateItems(feed.entries);
+            entriesAdapter.updateItems(source.items);
         }
 
         //
         // Set up the ViewPager with the sections adapter.
 
     }
+    @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
+    public UtteranceProgressListener entrySpeaker(){
+        return new UtteranceProgressListener() {
+            @Override
+            public void onStart(String utteranceId) {
 
+            }
+
+            @Override
+            public void onDone(String utteranceId) {
+                ArrayList arrayList = new ArrayList<String>();
+                arrayList.add(Speaker.currentEntry.id);
+                Feedler.ReadMarker marker = new Feedler.ReadMarker("markAsRead","entries",arrayList){
+                    @Override
+                    public void onPostExecute(String response){
+                        Toast.makeText(context, "Marked as read", 1500).show();
+                    }
+                };
+                marker.start();
+                Entries.markAsRead(currentEntry.id);
+            }
+
+            @Override
+            public void onError(String utteranceId) {
+
+            }
+        };
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -168,7 +206,7 @@ public class EntryActivity extends Activity {
 
         public void updateItems(ArrayList<Entry> newEntries){
             items = newEntries;
-            currentEntry = feed.entries.get(0);
+            currentEntry = source.items.get(0);
             notifyDataSetChanged();
         }
 
@@ -219,17 +257,39 @@ public class EntryActivity extends Activity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_entry, container, false);
-            TextView titleView = (TextView) rootView.findViewById(R.id.entryTitle);
+            View rootView = inflater.inflate(R.layout.tile_entry, container, false);
+            selectedEntryTileView = (View) rootView.findViewById(R.id.entryTileView);
+            selectedEntryFullView = (View) rootView.findViewById(R.id.entryFullView);
+
+            TextView titleView = (TextView) rootView.findViewById(R.id.entryFullTitle);
+            TextView contentView = (TextView) rootView.findViewById(R.id.entryFullContent);
+            TextView dateView = (TextView) rootView.findViewById(R.id.entryFullDate);
+            TextView tileTitle = (TextView) rootView.findViewById(R.id.tileTitle);
+            TextView tileDate = (TextView) rootView.findViewById(R.id.tileDate);
+            SuperImageView tileImageView = (SuperImageView) rootView.findViewById(R.id.tileImage);
+            SuperImageView imageView = (SuperImageView) rootView.findViewById(R.id.image);
+            tileTitle.setText(entry.title);
+            tileDate.setText(entry.date());
             titleView.setText(entry.title);
-            TextView contentView = (TextView) rootView.findViewById(R.id.entryContent);
             contentView.setText(entry.content());
-            TextView dateView = (TextView) rootView.findViewById(R.id.entryDate);
-            dateView.setText(String.valueOf(entry.published));
-            if (entry.visual!=null){
-                SmartImageView imageView = (SmartImageView) rootView.findViewById(R.id.entryImage);
+            if (entry.visual.url!=null){
                 imageView.setImageUrl(entry.visual.url);
+                tileImageView.setImageUrl(entry.visual.url);
+                tileImageView.setOnClickListener(new View.OnClickListener() {
+                    View currentEntryTileView = selectedEntryTileView;
+                    View currentEntryFullView = selectedEntryFullView;
+                    @Override
+                    public void onClick(View v) {
+                        this.currentEntryTileView.setVisibility(View.GONE);
+                        this.currentEntryFullView.setVisibility(View.VISIBLE);
+                    }
+                });
+            }else{
+                imageView.setVisibility(View.GONE);
+                selectedEntryTileView.setVisibility(View.GONE);
+                selectedEntryFullView.setVisibility(View.VISIBLE);
             }
+
             return rootView;
         }
     }
