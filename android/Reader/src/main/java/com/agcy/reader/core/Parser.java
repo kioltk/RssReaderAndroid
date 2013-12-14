@@ -1,20 +1,17 @@
 package com.agcy.reader.core;
 
-import com.agcy.reader.Models.RssChannel;
-import com.agcy.reader.Models.RssItem;
+import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.text.Html;
+import android.text.method.LinkMovementMethod;
+import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.StringReader;
+import com.agcy.reader.R;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 /**
  * Created by kiolt_000 on 02.11.13.
@@ -23,10 +20,69 @@ public class Parser{
     private String xmlString = "empty";
     DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
     DocumentBuilder builder = null;
-    public RssChannel response = null;
+    //public RssChannel response = null;
+    static Context context;
+    public static void initialization(Context context){
+        Parser.context = context;
+    }
     public String status = "empty";
-    public void execute(){
+    public static View parseHtml(String html){
+        final float scale = context.getResources().getDisplayMetrics().widthPixels;
+        //LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(1000, 1000);
 
+        LinearLayout parsedView = new LinearLayout(context);
+        parsedView.setOrientation(LinearLayout.VERTICAL);
+        //parsedView.setLayoutParams(params);
+        TextView text = new TextView(context);
+        text.setText("test start \b");
+
+
+
+
+
+
+        TextView text2 = new TextView(context);
+        text2.setText(Html.fromHtml(html,imgGetter,null));
+
+        text2.setMovementMethod(LinkMovementMethod.getInstance());
+
+        TextView text3 = new TextView(context);
+        text3.setText("test end \b");
+
+        //text.setLayoutParams(params);
+        parsedView.addView(text);
+        parsedView.addView(text2);
+        parsedView.addView(text3);
+        //LayoutInflater vi = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        /*View v = vi.inflate(R.layout.tile_entry, null);
+
+        // fill in any details dynamically here
+        TextView textView = (TextView) v.findViewById(R.id.entryFullContent);
+        textView.setText("your text");
+
+        // insert into main view
+        //View insertPoint = findViewById(R.id.insert_point);
+        ((ViewGroup) parsedView).addView(v, 0, params);
+        */
+
+
+
+        return parsedView;
+    }
+    private static Html.ImageGetter imgGetter = new Html.ImageGetter() {
+
+        public Drawable getDrawable(String source) {
+
+            final float scale = context.getResources().getDisplayMetrics().widthPixels;
+            Drawable drawable = null;
+            drawable = context.getResources().getDrawable(R.drawable.ic_launcher);
+            drawable.setBounds(0, 0, (int) scale-75, drawable
+                    .getIntrinsicHeight());
+            return drawable;
+        }
+    };
+    public void execute(){
+        /*
         RssChannel parseResponse;
 
         try {
@@ -101,5 +157,6 @@ public class Parser{
     }
     public Parser(String xmlString){
         this.xmlString = xmlString;
+    }*/
     }
 }

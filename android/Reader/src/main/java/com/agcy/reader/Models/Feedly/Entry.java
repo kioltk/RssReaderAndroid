@@ -84,7 +84,6 @@ public class Entry {
         }
     }
     public class Content{
-        //public String direction;
         public String content;
     }
 

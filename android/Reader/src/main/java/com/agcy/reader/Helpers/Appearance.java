@@ -12,21 +12,21 @@ public class Appearance {
     public static void slideFromBottom(View view){
         view.setAlpha(0);
         Animator alphaAnimator = ObjectAnimator.ofFloat(view, "alpha", 0, 1);
-        Animator translationAnimator =  ObjectAnimator.ofFloat(view, "translationY", 500, 0);
+        Animator translationAnimator =  ObjectAnimator.ofFloat(view, "translationY", 400, 0);
         AnimatorSet set = new AnimatorSet();
         set.playTogether(alphaAnimator,translationAnimator);
-        set.setStartDelay(100);
-        set.setDuration(500);
+        set.setStartDelay(50);
+        set.setDuration(400);
         set.start();
     }
     public static void slideFromTop(View view){
         view.setAlpha(0);
         Animator alphaAnimator = ObjectAnimator.ofFloat(view, "alpha", 0, 1);
-        Animator translationAnimator =  ObjectAnimator.ofFloat(view, "translationY", -500, 0);
+        Animator translationAnimator =  ObjectAnimator.ofFloat(view, "translationY", -400, 0);
         AnimatorSet set = new AnimatorSet();
         set.playTogether(alphaAnimator,translationAnimator);
-        set.setStartDelay(100);
-        set.setDuration(500);
+        set.setStartDelay(50);
+        set.setDuration(400);
         set.start();
     }
 }

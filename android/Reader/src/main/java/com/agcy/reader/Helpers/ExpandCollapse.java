@@ -13,6 +13,8 @@ public class ExpandCollapse {
 
     public static ValueAnimator createHeightAnimator(final View view, int start, int end) {
         ValueAnimator animator = ValueAnimator.ofInt(start, end);
+        int size = ( start > end ? start : end );
+        animator.setDuration( size );
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 
             @Override

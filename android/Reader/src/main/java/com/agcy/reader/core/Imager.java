@@ -220,8 +220,10 @@ public class Imager {
                     public void onEnd(Object object) {
                         if(object!=null){
                             imageView.setImageBitmap((Bitmap) object);
+
+                            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
                         }else
-                            imageView.setImageDrawable(context.getResources().getDrawable( android.R.drawable.stat_notify_error));
+                            imageView.setImageDrawable(context.getResources().getDrawable( R.drawable.ic_launcher));
                         imageView.clearAnimation();
 
                     }
@@ -229,6 +231,7 @@ public class Imager {
                 Animation a = AnimationUtils.loadAnimation(context, R.anim.rotating);
                 a.setDuration(1000);
                 imageView.startAnimation(a);
+                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
                 imageView.setImageDrawable(context.getResources().getDrawable(R.drawable.loading));
             }catch (Exception exp){
                 Log.e("agcylog","хрня какая-то");

@@ -315,6 +315,7 @@ public class MainActivity extends Activity
            return  rootView;
        }
         public View FeedActivityView(LayoutInflater inflater, ViewGroup container){
+
             View rootView= inflater.inflate(R.layout.fragment_feed, container, false);
             ListView feedView;
             statusViewShow("Loading feeds");
@@ -323,17 +324,10 @@ public class MainActivity extends Activity
             feedView = (ListView) rootView.findViewById(R.id.feedView);
             feedView.setAdapter(feedListAdapter);
 
-
-
-
-
-
-
-
-
             feedView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                     Bundle basket = new Bundle();
                     basket.putString("sourceId", feedListAdapter.getItem(position).id);
                     basket.putString("sourceType", "feed");
@@ -341,7 +335,6 @@ public class MainActivity extends Activity
                     Intent intent = new Intent(context, EntryActivity.class);
                     intent.putExtras(basket);
                     startActivity(intent);
-
 
                 }
             });
@@ -363,6 +356,7 @@ public class MainActivity extends Activity
 
             entryView = (ListView) rootView.findViewById(R.id.entryView);
             entryView.setAdapter(simpleEntryAdapter);
+            entryView.setItemsCanFocus(true);
 
             Log.i("agcylog","схватили все группы отображений");
 

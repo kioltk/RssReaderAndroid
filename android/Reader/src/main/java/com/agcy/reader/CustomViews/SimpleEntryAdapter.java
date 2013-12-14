@@ -6,11 +6,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import com.agcy.reader.Helpers.Appearance;
 import com.agcy.reader.Models.Feedly.Entry;
 import com.agcy.reader.R;
+import com.agcy.reader.core.Parser;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,6 +30,7 @@ public class SimpleEntryAdapter extends BaseAdapter {
     // the context is needed to inflate views in getView()
     public SimpleEntryAdapter(Context context) {
         this.context = context;
+
     }
 
     public void updateItems(List<Entry> bananaPhones) {
@@ -64,7 +67,7 @@ public class SimpleEntryAdapter extends BaseAdapter {
         TextView titleView = (TextView) rootView.findViewById(R.id.title);
         TextView dateView = (TextView) rootView.findViewById(R.id.date);
         TextView originView = (TextView) rootView.findViewById(R.id.origin);
-        TextView contentView = (TextView) rootView.findViewById(R.id.content);
+        ViewGroup contentView = (ViewGroup) rootView.findViewById(R.id.content);
 
         Log.i("agcylog","схвачены все группы отображений");
         Entry entryItem = getItem(position);
@@ -72,9 +75,17 @@ public class SimpleEntryAdapter extends BaseAdapter {
         Log.i("agcylog","статья найдена, заносим данные в элемент");
         try{
             titleView.setText(entryItem.title);
+            String content = entryItem.summary.content;
+            //contentView.setText(content);
 
-            contentView.setText(entryItem.content());
+            int height = View.MeasureSpec.makeMeasureSpec(200, View.MeasureSpec.EXACTLY);//(int) (2 * 30 * scale + 0.5f + 2);
+            final float scale = context.getResources().getDisplayMetrics().widthPixels;
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams((int)scale-80, ViewGroup.LayoutParams.WRAP_CONTENT);
 
+
+            contentView.addView(Parser.parseHtml(content),0);
+
+            contentView.setLayoutParams(params);
             if (entryItem.visual.url!=null)
                 imageView.setImageUrl(entryItem.visual.url);
             else

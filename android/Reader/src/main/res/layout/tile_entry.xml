@@ -112,13 +112,18 @@
 
 
                 </RelativeLayout>
-                <TextView
-                    android:id="@+id/entryFullContent"
+                <FrameLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Content"
-                    android:textSize="15sp"
-                    android:typeface="serif"  />
+                    android:id="@+id/contentView">
+                    <LinearLayout
+                        android:id="@+id/entryFullContent"
+                        android:orientation="vertical"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent">
+
+                    </LinearLayout>
+                </FrameLayout>
             </LinearLayout>
 
         </LinearLayout>

@@ -27,8 +27,11 @@ public class Loader extends AsyncTask<String, Integer, String>  {
     String methodName = "";
     String methodType = "GET";
     Object requestData;
-    public void start(){
-        execute("");
+    public void start() {
+        if(getStatus()==Status.PENDING)
+            execute();
+        else
+            Log.e("agcylog","Ошибка алгоритма - таска должна быть остановлена");
     }
     public void stop(){
         cancel(true);

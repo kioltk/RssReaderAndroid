@@ -52,6 +52,7 @@ public class Feedler{
 
     public static void setAccess(Context context){
         Feedler.context = context;
+        Parser.initialization(context);
         Feedler.accessStorage = context.getSharedPreferences("Access",Context.MODE_PRIVATE);
         refresh_token  = Feedler.accessStorage.getString("refresh_token", "");
 
@@ -393,10 +394,6 @@ public class Feedler{
     public static class EntryLoader extends Loader{
         public String sourceId;
         public String sourceType;
-        @Override
-        public void start(){
-            execute("");
-        }
         public EntryLoader(String sourceId,String sourceType  ) {
             this.sourceId = sourceId;
             this.sourceType = sourceType;

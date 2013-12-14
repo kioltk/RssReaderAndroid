@@ -15,6 +15,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,6 +27,7 @@ import com.agcy.reader.core.Feedler;
 import com.agcy.reader.core.Feedly.Categories;
 import com.agcy.reader.core.Feedly.Entries;
 import com.agcy.reader.core.Feedly.Feeds;
+import com.agcy.reader.core.Parser;
 import com.agcy.reader.core.Speaker;
 
 import java.util.ArrayList;
@@ -262,7 +264,7 @@ public class EntryActivity extends Activity {
             selectedEntryFullView = (View) rootView.findViewById(R.id.entryFullView);
 
             TextView titleView = (TextView) rootView.findViewById(R.id.entryFullTitle);
-            TextView contentView = (TextView) rootView.findViewById(R.id.entryFullContent);
+            ViewGroup contentView = (ViewGroup) rootView.findViewById(R.id.entryFullContent);
             TextView dateView = (TextView) rootView.findViewById(R.id.entryFullDate);
             TextView tileTitle = (TextView) rootView.findViewById(R.id.tileTitle);
             TextView tileDate = (TextView) rootView.findViewById(R.id.tileDate);
@@ -271,7 +273,13 @@ public class EntryActivity extends Activity {
             tileTitle.setText(entry.title);
             tileDate.setText(entry.date());
             titleView.setText(entry.title);
-            contentView.setText(entry.content());
+            String content = entry.summary.content;
+
+            final float scale = context.getResources().getDisplayMetrics().widthPixels;
+            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams((int)scale-80, ViewGroup.LayoutParams.WRAP_CONTENT);
+            contentView.addView(Parser.parseHtml(content),0);
+            contentView.setLayoutParams(params);
+
             if (entry.visual.url!=null){
                 imageView.setImageUrl(entry.visual.url);
                 tileImageView.setImageUrl(entry.visual.url);

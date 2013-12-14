@@ -28,8 +28,8 @@ public class Entries {
             add(entry);
         }
     }
-    public static List<Entry> list() {
 
+    public static List<Entry> list() {
         return new ArrayList<Entry>(entries.values());
     }
 
