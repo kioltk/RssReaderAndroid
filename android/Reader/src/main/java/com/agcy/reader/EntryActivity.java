@@ -25,12 +25,14 @@ import com.agcy.reader.Models.Feedly.Entry;
 import com.agcy.reader.Models.Feedly.Stream;
 import com.agcy.reader.core.Feedler;
 import com.agcy.reader.core.Feedly.Categories;
+import com.agcy.reader.core.Feedly.Comparators.EntryComparator;
 import com.agcy.reader.core.Feedly.Entries;
 import com.agcy.reader.core.Feedly.Feeds;
 import com.agcy.reader.core.Parser;
 import com.agcy.reader.core.Speaker;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class EntryActivity extends Activity {
 
@@ -135,6 +137,7 @@ public class EntryActivity extends Activity {
             //task.start();
         }
         else{
+            Collections.sort(source.items, new EntryComparator.byDateLast());
             entriesAdapter.updateItems(source.items);
         }
 
@@ -147,11 +150,13 @@ public class EntryActivity extends Activity {
         return new UtteranceProgressListener() {
             @Override
             public void onStart(String utteranceId) {
-
+                readButton.setImageResource(R.drawable.play_button);
             }
 
             @Override
             public void onDone(String utteranceId) {
+
+                readButton.setImageResource(R.drawable.pause_button);
                 ArrayList arrayList = new ArrayList<String>();
                 arrayList.add(Speaker.currentEntry.id);
                 Feedler.ReadMarker marker = new Feedler.ReadMarker("markAsRead","entries",arrayList){
@@ -167,6 +172,7 @@ public class EntryActivity extends Activity {
             @Override
             public void onError(String utteranceId) {
 
+                Toast.makeText(context, "error", 1500).show();
             }
         };
     }
@@ -268,11 +274,17 @@ public class EntryActivity extends Activity {
             TextView dateView = (TextView) rootView.findViewById(R.id.entryFullDate);
             TextView tileTitle = (TextView) rootView.findViewById(R.id.tileTitle);
             TextView tileDate = (TextView) rootView.findViewById(R.id.tileDate);
+            TextView originView = (TextView) rootView.findViewById(R.id.origin);
             SuperImageView tileImageView = (SuperImageView) rootView.findViewById(R.id.tileImage);
             SuperImageView imageView = (SuperImageView) rootView.findViewById(R.id.image);
             tileTitle.setText(entry.title);
-            tileDate.setText(entry.date());
+            tileDate.setText(entry.dateLocale());
             titleView.setText(entry.title);
+
+            originView.setText(entry.feed().title);
+            dateView.setText(String.valueOf(entry.dateLocale()));
+
+
             String content = entry.summary.content;
 
             final float scale = context.getResources().getDisplayMetrics().widthPixels;

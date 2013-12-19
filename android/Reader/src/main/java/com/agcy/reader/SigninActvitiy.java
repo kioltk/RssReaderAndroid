@@ -10,11 +10,12 @@ import android.view.View;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ProgressBar;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.agcy.reader.core.Feedler;
+import com.agcy.reader.core.Imager;
 import com.agcy.reader.core.Loader;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpResponseHandler;
@@ -24,7 +25,8 @@ public class SigninActvitiy extends Activity {
     Context context;
     Activity activity;
     TextView loginStatusText;
-    ProgressBar loginStatusBar;
+    View loginStatusBar;
+    View statusView;
     WebView loginWebView;
     String loginStatus = "loading";
     @Override
@@ -35,12 +37,13 @@ public class SigninActvitiy extends Activity {
         context = this;
         activity = this;
 
-        loginStatusBar = (ProgressBar) findViewById(R.id.loginStatusBar);
+        statusView = findViewById(R.id.statusView);
+        loginStatusBar =  findViewById(R.id.loginStatusBar);
         loginStatusText = (TextView) findViewById(R.id.loginStatusText);
         loginWebView = (WebView) findViewById(R.id.loginWebView);
 
         String url = Feedler.getLoginUrl();
-
+        Imager.setImageLoading((ImageView) loginStatusBar);
         MyWebViewClient client = new MyWebViewClient();
         loginWebView.setWebViewClient(client);
         WebSettings webSettings = loginWebView.getSettings();
@@ -61,13 +64,10 @@ public class SigninActvitiy extends Activity {
                     Toast.makeText(context, "Could not access", Toast.LENGTH_SHORT).show();
                 }
                 else{
-                    TextView loginStatusText = (TextView) findViewById(R.id.loginStatusText);
-                    ProgressBar loginStatusBar = (ProgressBar) findViewById(R.id.loginStatusBar);
 
                     loginStatus="finished";
-                    loginWebView.setVisibility(View.GONE);
-                    loginStatusText.setVisibility(View.VISIBLE);
-                    loginStatusBar.setVisibility(View.VISIBLE);
+                    statusView.setVisibility(View.GONE);
+                    loginWebView.setVisibility(View.VISIBLE);
                     loginStatusText.setText("Connecting to Feedly");
                     String code = url.substring(url.indexOf("code=")+5,url.indexOf("&state"));
                     Toast.makeText(context,code,2).show();
@@ -82,8 +82,7 @@ public class SigninActvitiy extends Activity {
         @Override
         public void onPageFinished(WebView view, String url){
             if(loginStatus.equals("loading")){
-                loginStatusBar.setVisibility(View.GONE);
-                loginStatusText.setVisibility(View.GONE);
+                statusView.setVisibility(View.GONE);
                 loginWebView.setVisibility(View.VISIBLE);
             }
         }
@@ -91,9 +90,8 @@ public class SigninActvitiy extends Activity {
         @Override
         public void	onPageStarted(WebView view, String url, Bitmap favicon){
 
-                loginStatusBar.setVisibility(View.VISIBLE);
-                loginStatusText.setVisibility(View.VISIBLE);
-                loginWebView.setVisibility(View.GONE);
+            statusView.setVisibility(View.VISIBLE);
+            loginWebView.setVisibility(View.GONE);
 
         }
 

@@ -23,6 +23,6 @@ public class SuperImageView extends ImageView {
     }
 
     public void setImageUrl(String url){
-        Imager.setImage(url, this);
+        Imager.setImageUrl(url, this);
     }
 }

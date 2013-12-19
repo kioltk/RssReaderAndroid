@@ -30,9 +30,9 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.agcy.reader.R;
 import com.nineoldandroids.animation.Animator;
 import com.nineoldandroids.animation.AnimatorListenerAdapter;
+import com.nineoldandroids.animation.ValueAnimator;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -155,7 +155,7 @@ public final class SwipeToMore implements View.OnTouchListener {
          * @param listView The originating {@link ListView}.
          * @param position The position of the item to dismiss.
          */
-        Action onAction(AbsListView listView, int position);
+        Action onAction(AbsListView listView, int position,boolean isDirectionRight);
     }
 
 
@@ -377,7 +377,7 @@ public final class SwipeToMore implements View.OnTouchListener {
                 int y = (int) motionEvent.getRawY() - listViewCoords[1];
                 View child;
                 for (int i = 0; i < childCount; i++) {
-                    child = mListView.getChildAt(i).findViewById(R.id.content); // берёт вью, с которым работает потом
+                    child = mListView.getChildAt(i); // берёт вью, с которым работает потом
                     child.getHitRect(rect);
                     if (rect.contains(x, y)) {
                         mDownView = child;
@@ -421,15 +421,16 @@ public final class SwipeToMore implements View.OnTouchListener {
                     // dismiss
                     final View downView = mDownView; // mDownView gets null'd before animation ends
                     final int downPosition = mDownPosition;
+                    final boolean mDismissRight = dismissRight;
                     ++mDismissAnimationRefCount;
                     animate(mDownView)
-                            .translationX(/*dismissRight ? */ mViewWidth/2 /*: -mViewWidth/2*/)
-                            //.alpha(0)
+                            .translationX(dismissRight ? mViewWidth : -mViewWidth)
+                            .alpha(0)
                             .setDuration(mAnimationTime)
                             .setListener(new AnimatorListenerAdapter() {
                                 @Override
                                 public void onAnimationEnd(Animator animation) {
-                                    performDismiss(downView, downPosition);
+                                    performDismiss(downView, downPosition,mDismissRight);
                                 }
                             });
                 } else {
@@ -533,7 +534,7 @@ public final class SwipeToMore implements View.OnTouchListener {
         }
     }
 
-    private void performDismiss(final View dismissView, final int dismissPosition) {
+    private void performDismiss(final View dismissView, final int dismissPosition,final boolean isDirectionRight) {
         // Animate the dismissed list item to zero-height and fire the dismiss callback when
         // all dismissed list item animations have completed. This triggers layout on each animation
         // frame; in the future we may want to do something smarter and more performant.
@@ -541,18 +542,19 @@ public final class SwipeToMore implements View.OnTouchListener {
         final ViewGroup.LayoutParams lp = dismissView.getLayoutParams();
         final int originalHeight = dismissView.getHeight();
         if(mCallback!=null){
-            Action undoable = mCallback.onAction(mListView, dismissPosition);
+            Action undoable = mCallback.onAction(mListView, dismissPosition,isDirectionRight);
         }
-        /*ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(mAnimationTime);
+        ValueAnimator animator = ValueAnimator.ofInt(originalHeight, 1).setDuration(mAnimationTime);
 
         animator.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 --mDismissAnimationRefCount;
+
                 if (mDismissAnimationRefCount == 0) {
                     // No active animations, process all pending dismisses.
 
-                    for(PendingDismissData dismiss : mPendingDismisses) {
+                    /*for(PendingDismissData dismiss : mPendingDismisses) {
                         if(mMode == UndoMode.SINGLE_UNDO) {
                             for(Undoable undoable : mUndoActions) {
                                 undoable.discard();
@@ -594,7 +596,7 @@ public final class SwipeToMore implements View.OnTouchListener {
                     }
 
                     mPendingDismisses.clear();
-
+            */
                 }
             }
         });
@@ -608,7 +610,7 @@ public final class SwipeToMore implements View.OnTouchListener {
         });
 
         mPendingDismisses.add(new PendingDismissData(dismissPosition, dismissView));
-        animator.start();*/
+        animator.start();
     }
 
     /**

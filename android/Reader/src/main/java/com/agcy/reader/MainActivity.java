@@ -1,5 +1,6 @@
 package com.agcy.reader;
 
+import android.animation.Animator;
 import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.Activity;
@@ -18,6 +19,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
@@ -29,6 +31,8 @@ import com.agcy.reader.CustomViews.NavigationDrawerFragment;
 import com.agcy.reader.CustomViews.SimpleCategoryAdapter;
 import com.agcy.reader.CustomViews.SimpleEntryAdapter;
 import com.agcy.reader.CustomViews.SimpleFeedAdapter;
+import com.agcy.reader.CustomViews.SwipeToMore;
+import com.agcy.reader.Helpers.Appearance;
 import com.agcy.reader.Models.Feedly.Feed;
 import com.agcy.reader.core.Feedler;
 import com.agcy.reader.core.Feedly.Categories;
@@ -73,7 +77,6 @@ public class MainActivity extends Activity
         statusText = (TextView) findViewById(R.id.statusText);
         Log.i("agcylog","loaded");
         Storage.initialization(this);
-        Imager.initialization(this);
         Feedler.categoryDownloader = new Feedler.CategoryLoader() {
             @Override
             public void onPostExecute(String result) {
@@ -92,6 +95,7 @@ public class MainActivity extends Activity
                 Feedler.downloadEntries();
                 contentViewShow();
                 categoryListAdapter.updateItems(Categories.list());
+
             }
         };
 
@@ -111,7 +115,6 @@ public class MainActivity extends Activity
         mNavigationDrawerFragment.setUp(
                 R.id.navigation_drawer,
                 (DrawerLayout) findViewById(R.id.drawer_layout));
-
 
     }
 
@@ -186,9 +189,9 @@ public class MainActivity extends Activity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == 0) {
             if (resultCode == TextToSpeech.Engine.CHECK_VOICE_DATA_PASS) {
-
+                Context applicationContext = getApplicationContext();
                 Log.i("agcylog","ттс загружен нормально");
-                Speaker.myTTS = new TextToSpeech(this, this);
+                Speaker.myTTS = new TextToSpeech(applicationContext,this);
 
             }
             else {
@@ -207,8 +210,8 @@ public class MainActivity extends Activity
             // Only show items in the action bar relevant to this screen
             // if the drawer is not showing. Otherwise, let the drawer
             // decide what to show in the action bar.
-            getMenuInflater().inflate(R.menu.main, menu);
-            restoreActionBar();
+            //getMenuInflater().inflate(R.menu.main, menu);
+            //restoreActionBar();
             return true;
         }
         return super.onCreateOptionsMenu(menu);
@@ -251,7 +254,9 @@ public class MainActivity extends Activity
         SimpleFeedAdapter feedListAdapter;
         SimpleEntryAdapter simpleEntryAdapter;
         static String[] settingsArray =  new String[]{
+                "Update data",
                 "Download images",
+                "Settings",
                 "Logout"
         };
         @Override
@@ -298,14 +303,53 @@ public class MainActivity extends Activity
                @Override
                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                    switch (position){
-                       case 0:
-                           Imager.downloadImages();
-                           break;
                        case 1:
+                           if(Imager.status == Imager.STATUS_NONE)
+                               Imager.downloadImages();
+                           else
+                               if(Imager.status==Imager.STATUS_LOADING)
+                                    Imager.pauseDownloading();
+                               else{
+                                   if(Imager.status == Imager.STATUS_PAUSE){
+                                       Imager.resumeDownloading();
+                                   }
+                               }
+
+                           break;
+                       case 3:
                            Feedler.logout();
                            Intent intent = new Intent(context, StartActivity.class);
                            startActivity(intent);
                            activity.finish();
+                           break;
+                       case 2:
+                           Intent intent1 = new Intent(context, SettingsActivity.class);
+                           //startActivity(intent1);
+                           break;
+                       case 0:
+                           if(Feedler.categoryDownloader==null && Feedler.feedDownloader==null){
+                               Feedler.categoryDownloader = new Feedler.CategoryLoader() {
+                                   @Override
+                                   public void onPostExecute(String result) {
+                                       data = result;
+                                       chewData();
+                                       Feedler.feedDownloader.start();
+                                       Feedler.categoryDownloader = null;
+                                   }
+                               };
+                               Feedler.categoryDownloader.start();
+                               //Feedler.saveData();
+                               Feedler.feedDownloader = new Feedler.FeedLoader() {
+                                   @Override
+                                   public void onPostExecute(String result) {
+                                       data = result;
+                                       chewData();
+                                       Feedler.downloadEntries();
+
+                                       Feedler.feedDownloader = null;
+                                   }
+                           };
+                           }
                            break;
                    }
 
@@ -357,7 +401,19 @@ public class MainActivity extends Activity
             entryView = (ListView) rootView.findViewById(R.id.entryView);
             entryView.setAdapter(simpleEntryAdapter);
             entryView.setItemsCanFocus(true);
-
+            new SwipeToMore(entryView,new SwipeToMore.OnActionCallback() {
+                @Override
+                public SwipeToMore.Action onAction(AbsListView listView, int position,boolean rightDismiss) {
+                    if(rightDismiss){
+                        Toast.makeText(context,"TODO:Отметить как прочитаное",Toast.LENGTH_SHORT).show();
+                        // TODO: Mark as read
+                    }else{
+                        Toast.makeText(context,"TODO:Сохранить на потом",Toast.LENGTH_SHORT).show();
+                        // TODO: Save to late
+                    }
+                    return null;
+                }
+            });
             Log.i("agcylog","схватили все группы отображений");
 
 
@@ -365,7 +421,55 @@ public class MainActivity extends Activity
 
 
 
+            entryView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
+                    final View speakerView = view.findViewById(R.id.readButton);
+                    Log.i("agcylog", "кликнут элемент entry");
+                    if (speakerView.getVisibility() == View.GONE) {
+                        speakerView.setVisibility(View.VISIBLE);
+                        Appearance.slideFromRight(speakerView);
+                        //expandHorizontal(speakerView);
+                    } else {
+
+                        Appearance.slideToRight(speakerView).addListener(new Animator.AnimatorListener() {
+                            @Override
+                            public void onAnimationStart(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                speakerView.setVisibility(View.GONE);
+                            }
+
+                            @Override
+                            public void onAnimationCancel(Animator animation) {
+
+                            }
+
+                            @Override
+                            public void onAnimationRepeat(Animator animation) {
+
+                            }
+                        });
+                    }
+
+                }
+
+
+            });
+            entryView.setLongClickable(true);
+            entryView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+                @Override
+                public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                    // TODO: Redirect to fullpage
+                    Toast.makeText(context, "TODO:Переход на полную страницу", Toast.LENGTH_SHORT).show();
+                    return true;
+
+                }
+            });
 
             /*
             entryView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

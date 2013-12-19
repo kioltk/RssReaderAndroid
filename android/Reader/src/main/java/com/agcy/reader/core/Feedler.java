@@ -49,76 +49,144 @@ public class Feedler{
         Feedler.updateIn(loginResponse.expires_in);
         initialization();
     }
-
-    public static void setAccess(Context context){
+    public static void initialization(Context context){
         Feedler.context = context;
+        Imager.initialization(context);
         Parser.initialization(context);
+        Notificator.initialization(context);
         Feedler.accessStorage = context.getSharedPreferences("Access",Context.MODE_PRIVATE);
         refresh_token  = Feedler.accessStorage.getString("refresh_token", "");
 
     }
+
+    static ContentValues tempValues = new ContentValues();
     public static void saveAccess(){
         SharedPreferences.Editor editor = Feedler.accessStorage.edit();
         editor.putString("refresh_token", refresh_token);
         editor.apply();
     }
-
     public static void saveData(){
 
-
-        Storage.savers.add(new Storage.Saver() {
+        Storage.Saver saver = new Storage.Saver() {
             @Override
             public void toSave() {
                 long time = new Date().getTime();
                 Log.i("agcylog", "сохранение инфы на диск " + time);
 
-                ContentValues values = new ContentValues();
                 for (Category category : Categories.getCategories()) {
-
-                    values.clear();
-                    values.put("id", category.id);
-                    values.put("label", category.label);
-                    Storage.save("category", values);
-
+                    saveCategory(category);
                 }
 
                 for (Feed feed : Feeds.list()) {
-
-                    values.clear();
-                    values.put("id", feed.id);
-                    values.put("title", feed.title);
-                    values.put("website", feed.website);
-                    values.put("categories", feed.getCategories());
-                    Storage.save("feed", values);
-                    values.clear();
-                    values.put("feedid", feed.id);
-
-                    for (Category category : feed.categories) {
-                        values.put("categoryid", category.id);
-                        Storage.save("feedCategories", values);
-                    }
-
+                    saveFeed(feed);
                 }
 
                 for (Entry entry : Entries.list()) {
-
-                    values.clear();
-                    values.put("id", entry.id);
-                    values.put("content", entry.summary.content);
-                    values.put("title", entry.title);
-                    values.put("unread", entry.unread);
-                    values.put("streamId", entry.origin.streamId);
-                    values.put("image", entry.visual.url);
-                    values.put("date", entry.published);
-                    Storage.save("entry", values);
-
+                    saveEntry(entry);
                 }
 
                 //Storage.end();
                 Log.i("agcylog", "сохранено за " + (new Date().getTime() - time));
             }
-        });
-        Storage.startSavers();
+        };
+        Storage.savers.add(saver);
+        saver.start();
+    }
+    private static void saveEntry(Entry entry) {
+        tempValues.clear();
+        tempValues.put("id", entry.id);
+        tempValues.put("content", entry.summary.content);
+        tempValues.put("title", entry.title);
+        tempValues.put("unread", entry.unread);
+        tempValues.put("streamId", entry.origin.streamId);
+        tempValues.put("image", entry.visual.url);
+        tempValues.put("date", entry.published);
+        Storage.save("entry", tempValues);
+    }
+    private static void saveCategory(Category category) {
+        tempValues.clear();
+        tempValues.put("id", category.id);
+        tempValues.put("label", category.label);
+        Storage.save("category", tempValues);
+    }
+    public static void saveFeed(Feed feed){
+        tempValues.clear();
+        tempValues.put("id", feed.id);
+        tempValues.put("title", feed.title);
+        tempValues.put("website", feed.website);
+        tempValues.put("categories", feed.getCategories());
+        Storage.save("feed", tempValues);
+        tempValues.clear();
+        tempValues.put("feedid", feed.id);
+
+        for (Category category : feed.categories) {
+            tempValues.put("categoryid", category.id);
+            Storage.save("feedCategories", tempValues);
+        }
+    }
+    public static void saveEntryAsync(final Entry entry){
+        Storage.Saver saver = new Storage.Saver() {
+            @Override
+            public void toSave() {
+                saveEntry(entry);
+            }
+        };
+        Storage.savers.add(saver);
+        saver.start();
+    }
+    public static void saveFeedAsync(final Feed feed){
+        Storage.Saver saver = new Storage.Saver() {
+            @Override
+            public void toSave() {
+                saveFeed(feed);
+            }
+        };
+
+        Storage.savers.add(saver);
+        saver.start();
+    }
+    public static void saveCategoryAsync(final Category category){
+        Storage.Saver saver = new Storage.Saver() {
+            @Override
+            public void toSave() {
+                saveCategory(category);
+            }
+        };
+        Storage.savers.add(saver);
+        saver.start();
+    }
+    public static void saveCategoriesAsync(final ArrayList<Category> categories){
+        Storage.Saver saver = new Storage.Saver() {
+            @Override
+            public void toSave() {
+                for(Category category:categories)
+                    saveCategory(category);
+            }
+        };
+        Storage.savers.add(saver);
+        saver.start();
+    }
+    public static void saveFeedsAsync(final ArrayList<Feed> feeds){
+        Storage.Saver saver = new Storage.Saver() {
+            @Override
+            public void toSave() {
+                for(Feed feed:feeds)
+                    saveFeed(feed);
+            }
+        };
+        Storage.savers.add(saver);
+        saver.start();
+    }
+    public static void saveEntriesAsync(final ArrayList<Entry> entries){
+        Storage.Saver saver = new Storage.Saver() {
+            @Override
+            public void toSave() {
+                for(Entry entry:entries)
+                    saveEntry(entry);
+            }
+        };
+        Storage.savers.add(saver);
+        saver.start();
     }
     public static Boolean loadData(){
 
@@ -177,7 +245,9 @@ public class Feedler{
                 entry.origin.streamId = cursor.getString(d);
                 entry.unread = cursor.getInt(e)>0;
                 entry.visual.url = cursor.getString(f);
-                entry.published  = cursor.getInt(g);
+
+
+                entry.published  = cursor.getLong(g);
                 Entries.add(entry);
 
             }while (cursor.moveToNext());
@@ -339,9 +409,8 @@ public class Feedler{
                     entryDownloaded();
                     downloaders.remove(this);
                     if(downloaders.isEmpty()){
-
-                        Log.i("agcylog", "скачано "+Entries.list().size()+" статей за " + time);
                         saveData();
+                        Log.i("agcylog", "скачано "+Entries.list().size()+" статей за " + time);
 
                     }
                     else{
@@ -382,34 +451,40 @@ public class Feedler{
     public static class FeedLoader extends Loader{
         public FeedLoader() {
             super();
-            baseUrl = "http://sandbox.feedly.com/v3/subscriptions";
+            methodName = "subscriptions";
         }
         public String data ="";
         public void chewData(){
             ArrayList<Feed> s = new Gson().fromJson(data, new TypeToken<ArrayList<Feed>>() {
             }.getType());
             Feeds.add(s);
+
+            saveFeedsAsync(s);
         }
     }
     public static class EntryLoader extends Loader{
         public String sourceId;
         public String sourceType;
         public EntryLoader(String sourceId,String sourceType  ) {
+            super();
             this.sourceId = sourceId;
             this.sourceType = sourceType;
-            baseUrl = "http://sandbox.feedly.com/v3/streams/contents?streamId="+sourceId;
+            methodName = "streams/contents";
+            parameters.put("streamId",sourceId);
         }
         public String data ="";
         public void chewData(){
 
             Stream s = new Gson().fromJson(data, Stream.class);
             Entries.add(s.items);
+            //saveEntriesAsync(s.items);
         }
     }
     public static class CategoryLoader extends Loader{
         public CategoryLoader() {
             super();
-            baseUrl = "http://sandbox.feedly.com/v3/categories";
+            baseUrl = "http://sandbox.feedly.com/v3/";
+            methodName ="categories";
         }
         public String data ="";
         public void chewData(){
@@ -421,6 +496,7 @@ public class Feedler{
             try {
                 ArrayList<Category> s = gson.fromJson(data, type);
                 Categories.add(s);
+                saveCategoriesAsync(s);
             } catch (JsonSyntaxException e) {
                 String s = e.getMessage();
             }

@@ -39,13 +39,14 @@ public class Entry {
         visual = new Visual();
     }
     public ArrayList<Category> categories;
-    public String date() {
-        return new Date(published).toString();
+    public String dateLocale() {
+        
+        return new Date(published).toLocaleString();
+    }
+    public Date date(){
+        return new Date(published);
     }
 
-    public String getCategories() {
-        return new Gson().toJson(categories);
-    }
 
     public void setCategories(String json) {
 
@@ -59,6 +60,7 @@ public class Entry {
         }
         return feed;
     }
+
 
     public static class Visual{
         public String url;

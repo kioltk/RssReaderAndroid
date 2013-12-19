@@ -53,21 +53,11 @@ public class Storage extends SQLiteOpenHelper {
     }
     public static void startSavers(){
 
-        new AsyncTask<String, String, Void>(){
-
-            @Override
-            protected Void doInBackground(String... params) {
-                for(Saver saver:savers){
-                    saver.toSave();
-                }
-                savers.clear();
-                return null;
-            }
-        }.execute();
-
-
-
+        for(Saver saver:savers){
+            saver.start();
+        }
     }
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(CREATE_TABLE_ENTRIES);
@@ -116,5 +106,25 @@ public class Storage extends SQLiteOpenHelper {
     public static ArrayList<Saver> savers;
     public static abstract class Saver{
         public abstract void toSave();
+        public int status = 0;
+        public void start() {
+            final Object me = this;
+            if(status==0){
+                status = 1;
+                new AsyncTask<String, String, Void>(){
+
+                    @Override
+                    protected Void doInBackground(String... params) {
+                        Log.i("agcylog","Начало сохранения ");
+                        toSave();
+                        savers.remove(me);
+                        status = 2;
+
+                        Log.i("agcylog","сохранено ");
+                        return null;
+                    }
+                    }.execute();
+            }
+        }
     }
 }

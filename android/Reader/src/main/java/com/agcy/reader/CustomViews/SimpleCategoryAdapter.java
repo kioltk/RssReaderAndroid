@@ -21,8 +21,8 @@ import com.agcy.reader.R;
 import java.util.Collections;
 import java.util.List;
 
-import static com.agcy.reader.Helpers.ExpandCollapse.animateCollapsing;
-import static com.agcy.reader.Helpers.ExpandCollapse.animateExpanding;
+import static com.agcy.reader.Helpers.ExpandCollapse.collapseVertical;
+import static com.agcy.reader.Helpers.ExpandCollapse.expandVertical;
 
 /**
  * Created by kiolt_000 on 27.11.13.
@@ -176,10 +176,10 @@ public class SimpleCategoryAdapter extends BaseAdapter {
                 Log.i("agcylog", "кликнут элемент");
 
                 if(contentView.getVisibility()==View.GONE){
-                    animateExpanding(contentView);
+                    expandVertical(contentView);
                 }
                 else {
-                    animateCollapsing(contentView);
+                    collapseVertical(contentView);
 
                 }
             }

@@ -6,19 +6,16 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.FrameLayout;
+import android.widget.ImageButton;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.agcy.reader.Helpers.Appearance;
 import com.agcy.reader.Models.Feedly.Entry;
 import com.agcy.reader.R;
-import com.agcy.reader.core.Parser;
 
 import java.util.Collections;
 import java.util.List;
-
-import static com.agcy.reader.Helpers.ExpandCollapse.animateCollapsing;
-import static com.agcy.reader.Helpers.ExpandCollapse.animateExpanding;
 
 public class SimpleEntryAdapter extends BaseAdapter {
 
@@ -57,7 +54,7 @@ public class SimpleEntryAdapter extends BaseAdapter {
         return position;
     }
     @Override
-    public View getView(int position, View convertView, ViewGroup parent) {
+    public View getView(final int position, View convertView, ViewGroup parent) {
 
         Log.i("agcylog", "начинаем отображение элемента");
         View rootView = LayoutInflater.from(context)
@@ -67,7 +64,6 @@ public class SimpleEntryAdapter extends BaseAdapter {
         TextView titleView = (TextView) rootView.findViewById(R.id.title);
         TextView dateView = (TextView) rootView.findViewById(R.id.date);
         TextView originView = (TextView) rootView.findViewById(R.id.origin);
-        ViewGroup contentView = (ViewGroup) rootView.findViewById(R.id.content);
 
         Log.i("agcylog","схвачены все группы отображений");
         Entry entryItem = getItem(position);
@@ -78,33 +74,20 @@ public class SimpleEntryAdapter extends BaseAdapter {
             String content = entryItem.summary.content;
             //contentView.setText(content);
 
-            int height = View.MeasureSpec.makeMeasureSpec(200, View.MeasureSpec.EXACTLY);//(int) (2 * 30 * scale + 0.5f + 2);
-            final float scale = context.getResources().getDisplayMetrics().widthPixels;
-            FrameLayout.LayoutParams params = new FrameLayout.LayoutParams((int)scale-80, ViewGroup.LayoutParams.WRAP_CONTENT);
 
 
-            contentView.addView(Parser.parseHtml(content),0);
-
-            contentView.setLayoutParams(params);
             if (entryItem.visual.url!=null)
                 imageView.setImageUrl(entryItem.visual.url);
             else
                 imageView.setVisibility(View.GONE);
-            dateView.setText(String.valueOf(entryItem.published));
+            dateView.setText(entryItem.dateLocale());
             originView.setText(entryItem.feed().title);
-            rootView.setOnClickListener(new View.OnClickListener() {
+            final View speakerView = rootView.findViewById(R.id.readButton);
+            ((ImageButton)speakerView).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-
-                    Log.i("agcylog","кликнут элемент entry");
-                    final View contentView = v.findViewById(R.id.contentView);
-
-                    if(contentView.getVisibility()==View.GONE){
-                        animateExpanding(contentView);
-                    }
-                    else {
-                        animateCollapsing(contentView);
-                    }
+                    Toast.makeText(context, "TODO:Сча подам голос!", Toast.LENGTH_SHORT).show();
+                    // TODO: Voice
                 }
             });
         } catch (Exception exp){
@@ -115,7 +98,7 @@ public class SimpleEntryAdapter extends BaseAdapter {
         * */
         Log.i("agcylog","возвращаем элемент");
 
-        if(position>=lastSlided){
+        if(position>lastSlided){
             Appearance.slideFromBottom(rootView);
         }else{
             Appearance.slideFromTop(rootView);

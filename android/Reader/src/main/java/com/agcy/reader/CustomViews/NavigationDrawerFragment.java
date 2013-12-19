@@ -21,7 +21,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.agcy.reader.R;
-import com.agcy.reader.core.Feedler;
 import com.agcy.reader.core.Loader;
 
 ;
@@ -109,7 +108,7 @@ public class NavigationDrawerFragment extends Fragment {
                         "Categories",
                         "Feeds",
                         "Entries",
-                        "Settings",
+                        "Additional",
                 }));
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);
         return mDrawerListView;
@@ -243,7 +242,7 @@ public class NavigationDrawerFragment extends Fragment {
             //inflater.inflate(R.menu.global, menu);
             // showGlobalContextActionBar();
         }
-        super.onCreateOptionsMenu(menu, inflater);
+        //super.onCreateOptionsMenu(menu, inflater);
     }
     Loader task2;
 
@@ -254,24 +253,7 @@ public class NavigationDrawerFragment extends Fragment {
         }
 
         if (item.getItemId() == R.id.action_example) {
-            Feedler.categoryDownloader = new Feedler.CategoryLoader() {
-                @Override
-                public void onPostExecute(String result) {
-                    data = result;
-                    chewData();
-                    Feedler.feedDownloader.start();
-                }
-            };
-            Feedler.categoryDownloader.start();
-            //Feedler.saveData();
-            Feedler.feedDownloader = new Feedler.FeedLoader() {
-                @Override
-                public void onPostExecute(String result) {
-                    data = result;
-                    chewData();
-                    Feedler.downloadEntries();
-                }
-            };
+
 
         }
 

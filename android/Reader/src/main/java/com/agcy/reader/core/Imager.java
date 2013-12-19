@@ -9,6 +9,7 @@ import android.util.Log;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.agcy.reader.Models.Feedly.Entry;
 import com.agcy.reader.Models.Feedly.Feed;
@@ -23,6 +24,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by kiolt_000 on 10.12.13.
@@ -31,8 +33,18 @@ public class Imager {
     public static HashMap<String, Boolean> imageStoraged;
     public static HashMap<String,Bitmap> imageCache;
     static HashMap<String,DownloadImageTask> imageloadingTasks;
+    static ArrayList<String> requiredImages;
     static int imageLoader = 0;
     static Context context;
+    public static final int STATUS_NONE = 0;
+    public static final int STATUS_DONE = 1;
+    public static final int STATUS_LOADING = 2;
+    public static final int STATUS_PAUSE = 3;
+    public static final int STATUS_FETCHING = 4;
+
+
+
+    public static int status = STATUS_NONE;
 
     // todo: сохранение на сд карту
 
@@ -44,64 +56,104 @@ public class Imager {
         checkStoraged();
         SaveImageTask.path = context.getExternalCacheDir();
     }
-
-
+    static FetchImagesTask fetchImagesTask;
     public static void downloadImages(){
 
-        String coded =  codeFilename("http://www.mkyong.com/java/how-do-convert-byte-array-to-string-in-java/");
-        String decoded = decodeFilename(coded);
-        ArrayList<String> requiredImages = new ArrayList<String>();
-        for(Feed feed: Feeds.list()){
-            String url = feed.icon();
-            if(get(url)==null  && !isStoraged(url)){
-                if(!requiredImages.contains(url))
-                    requiredImages.add(url);
-            }
-
-
+        if(status==STATUS_NONE){
+            fetchImagesTask= new FetchImagesTask();
+            fetchImagesTask.execute();
+            Notificator.show("Image loading","Fetching...",0,0,false,true);
+            status =STATUS_FETCHING;
         }
 
-        Log.i("agcylog","забиты все фиды на закачку");
-
-        for(Entry entry: Entries.list()){
-            String url= entry.visual.url;
-            if(url!=null)
-                if(get(url)==null && !isStoraged(url))
-                    if(!requiredImages.contains(url))
-                        requiredImages.add(url);
-
-        }
-        for(final String imageUrl:requiredImages){
-            DownloadImageTask task = imageLoader(imageUrl);
-
-            task.addListener(new Listener() {
-                @Override
-                public void onEnd(Object object) {
-
-                    saveImage(imageUrl);
-                    if(!imageloadingTasks.isEmpty()){
-
-                        Log.i("agcylog","осталось закачек" + imageloadingTasks.size());
-                        firstLoader().start();
-                    }
-                    else{
-                        Log.i("agcylog","Закачки картинок завершены");
-                    }
-                }
-            });
-            imageloadingTasks.put(imageUrl, task);
-        }
-        Log.i("agcylog","забиты все картинки на закачку");
-        if(!imageloadingTasks.isEmpty()){
-
-            Log.i("agcylog","осталось закачек" + imageloadingTasks.size());
-            DownloadImageTask task = firstLoader();
-            task.start();
-        }
     }
 
+    public static int tasksCount() {
+        return imageloadingTasks.size();
+    }
+
+    private static class FetchImagesTask extends AsyncTask<String,String,String>{
+        @Override
+        public String doInBackground(String... params)
+        {
+            requiredImages = new ArrayList<String>();
+            for(Feed feed: Feeds.list()){
+                String url = feed.icon();
+                if(!isCached(url)  && !isStoraged(url)){
+                    if(!requiredImages.contains(url))
+                        requiredImages.add(url);
+                }
+
+
+            }
+
+            Log.i("agcylog","забиты все фиды на закачку");
+            for(Entry entry: Entries.list()){
+                String url= entry.visual.url;
+                if(url!=null)
+                    if(!isCached(url) && !isStoraged(url))
+                        if(!requiredImages.contains(url))
+                            requiredImages.add(url);
+                if(entry.summary.content!=null){
+                    ArrayList<String> imagesFromEntry = Parser.fetchImages(entry.summary.content);
+                    for(String imageFromEntry:imagesFromEntry){
+                        if(!isCached(imageFromEntry) && !isStoraged(imageFromEntry))
+                            if(!requiredImages.contains(imageFromEntry))
+                                requiredImages.add(imageFromEntry);
+                    }
+                }
+            }
+            Log.i("agcylog","картинки со всех статей забиты на закачку");
+            for(final String imageUrl:requiredImages){
+                DownloadImageTask task = imageloadingTasks.get(imageUrl);
+                if(task==null){
+                    task = imageLoader(imageUrl);
+                    imageloadingTasks.put(imageUrl, task);
+                }
+                task.addListener(new Listener() {
+                    @Override
+                    public void onEnd(Object object) {
+
+                        saveImage(imageUrl);
+                        if (!imageloadingTasks.isEmpty()) {
+                            Toast.makeText(context, "осталось закачек" + imageloadingTasks.size(), Toast.LENGTH_SHORT).show();
+
+                            Log.i("agcylog", "осталось закачек" + imageloadingTasks.size());
+                            firstLoader().start();
+                            showNotifyUpdate();
+                        } else {
+                            Log.i("agcylog", "Закачки картинок завершены");
+                        }
+                    }
+                });
+            }
+
+            Log.i("agcylog","забиты все картинки на закачку");
+            if(!imageloadingTasks.isEmpty()){
+
+                showNotifyUpdate();
+                Log.i("agcylog","осталось закачек" + imageloadingTasks.size());
+                DownloadImageTask task = firstLoader();
+                task.start();
+                status = STATUS_LOADING;
+            }else {
+                Notificator.end();
+                status = STATUS_DONE;
+            }
+            return "ok";
+        }
+    }
+    private static void showNotifyUpdate(){
+        Notificator.update("Image loading",
+                requiredImages.size()-imageloadingTasks.size()+" of "+ requiredImages.size(),
+                requiredImages.size()-imageloadingTasks.size(),
+                requiredImages.size(),false);
+    }
     private static boolean isStoraged(String url) {
-            return imageStoraged.get(url)!=null;
+        return imageStoraged.get(url)!=null;
+    }
+    private static boolean isCached(String url){
+        return imageCache.get(url)!=null;
     }
     public static void checkStoraged(){
 
@@ -128,18 +180,6 @@ public class Imager {
             Bitmap bmp = imageCache.get(url);
             if(bmp!=null)
                 try{
-
-                    /*
-                        OutputStream fOut = null;
-                        File file = new File(path7, filename);
-                        fOut = new FileOutputStream(file);
-                        bmp.compress(Bitmap.CompressFormat.PNG, 100, fOut);
-                        fOut.flush();
-                        fOut.close();
-                        Log.i("agcylog","изображение сохранено на диск " +url );
-                        imageCache.remove(url);
-                        imageStoraged.put(url, true);
-                    */
                     new SaveImageTask(url).execute();
                 }catch (Exception exp){
                     Log.e("agcylog","ошибка сохранения  на диск " + exp.getMessage());
@@ -162,6 +202,7 @@ public class Imager {
             }
         }/**/
     }
+
     private static String codeFilename(String fileName){
         byte[] bytes = fileName.getBytes();
         String coded = "";
@@ -191,6 +232,76 @@ public class Imager {
         return null;
     }
 
+    public static void resumeDownloading(){
+        if(status==STATUS_NONE)
+            downloadImages();
+        else{
+            if(status==STATUS_PAUSE){
+                firstLoader().execute();
+                status = STATUS_LOADING;
+                Notificator.show("Image loading",
+                        "",
+                        0,
+                        100,
+                        false,
+                        false);
+                showNotifyUpdate();
+            }
+        }
+    }
+    public static void pauseDownloading(){
+        if(status==STATUS_FETCHING){
+            status = STATUS_NONE;
+            fetchImagesTask.cancel(true);
+        }else {
+            final DownloadImageTask task = firstLoader();
+            task.cancel(true);
+            status = STATUS_PAUSE;
+            for(Map.Entry<String,DownloadImageTask> entry:imageloadingTasks.entrySet()){
+                if(entry.getValue()==task){
+                    final String urldisplay = task.urldisplay;
+                    DownloadImageTask task1 = new DownloadImageTask(urldisplay);
+                    task1.addListener(new Listener() {
+                        @Override
+                        public void onEnd(Object object) {
+
+                            saveImage(urldisplay);
+                            if (!imageloadingTasks.isEmpty()) {
+                                Toast.makeText(context, "осталось закачек" + imageloadingTasks.size(), Toast.LENGTH_SHORT).show();
+                                showNotifyUpdate();
+                                Log.i("agcylog", "осталось закачек" + imageloadingTasks.size());
+                                firstLoader().start();
+                            } else {
+                                Notificator.end();
+                                Log.i("agcylog", "Закачки картинок завершены");
+                            }
+                        }
+                    });
+                    imageloadingTasks.put(entry.getKey(),task1);
+                }
+            }
+        }
+        Notificator.show("Image loading",
+                "Paused",
+                0,
+                0,
+                true,
+                false);
+    }
+    public static void cancelDownloading(){
+        if(status==STATUS_FETCHING){
+            fetchImagesTask.cancel(true);
+            fetchImagesTask=null;
+        }
+            final DownloadImageTask task = firstLoader();
+            if(task!=null)
+                task.cancel(true);
+
+            imageloadingTasks.clear();
+
+        Notificator.hide();
+        status =STATUS_NONE;
+    }
 
     public static Bitmap get(String url) {
 
@@ -203,7 +314,7 @@ public class Imager {
            }
         return bitmap;
     }
-    public static void setImage(String url, final ImageView imageView) {
+    public static void setImageUrl(String url, final ImageView imageView) {
 
         Bitmap bitmap = get(url);
         if( bitmap == null ){
@@ -215,24 +326,20 @@ public class Imager {
                     imageloadingTasks.put(url,task);
                     task.start();
                 }
+                final ImageView.ScaleType scaleType = imageView.getScaleType();
                 task.addListener(new Listener() {
                     @Override
                     public void onEnd(Object object) {
                         if(object!=null){
-                            imageView.setImageBitmap((Bitmap) object);
-
-                            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                            imageView.setScaleType(scaleType);
+                            setImageBitmap((Bitmap) object, imageView);
                         }else
-                            imageView.setImageDrawable(context.getResources().getDrawable( R.drawable.ic_launcher));
+                            imageView.setImageDrawable(context.getResources().getDrawable( android.R.drawable.ic_delete));
                         imageView.clearAnimation();
 
                     }
                 });
-                Animation a = AnimationUtils.loadAnimation(context, R.anim.rotating);
-                a.setDuration(1000);
-                imageView.startAnimation(a);
-                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                imageView.setImageDrawable(context.getResources().getDrawable(R.drawable.loading));
+                setImageLoading(imageView);
             }catch (Exception exp){
                 Log.e("agcylog","хрня какая-то");
             }
@@ -240,6 +347,24 @@ public class Imager {
             imageView.setImageBitmap(bitmap);
         }
 
+    }
+    public static void setImageBitmap(Bitmap object, ImageView imageView) {
+        imageView.setImageBitmap((Bitmap) object);
+    }
+    public static void setImageLoading(ImageView imageView) {
+        //ViewGroup.LayoutParams params = imageView.getLayoutParams();
+        //params.height = 100;
+        //imageView.setLayoutParams(params);
+        Animation a = AnimationUtils.loadAnimation(context, R.anim.rotating);
+        a.setDuration(1000);
+
+        imageView.startAnimation(a);
+        imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        //imageView.setBackground(context.getResources().getDrawable(R.drawable.background));
+        imageView.setImageDrawable(context.getResources().getDrawable(R.drawable.loading));
+    }
+    public static void setImageGif(ImageView imageView, Object Gif) {
+        return;
     }
 
     public static class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
@@ -256,8 +381,8 @@ public class Imager {
         }
 
         protected Bitmap doInBackground(String... urls) {
-            if(urldisplay==null)
-                urldisplay = urls[0];
+            if (urldisplay==null)
+                return null;
             Log.i("agcylog","начало загрузки картинки " + urldisplay);
             Bitmap mIcon11 = null;
             try {
@@ -297,9 +422,6 @@ public class Imager {
                 Log.e("agcylog","Ошибка алгоритма - таска должна быть остановлена");
         }
     }
-    public static abstract class Listener{
-        public abstract void onEnd(Object object);
-    }
     public static class SaveImageTask extends  AsyncTask<String,Void,Boolean>{
         static File path;
         Bitmap file;
@@ -326,5 +448,8 @@ public class Imager {
             }
             return null;
         }
+    }
+    public static abstract class Listener{
+        public abstract void onEnd(Object object);
     }
 }

@@ -6,7 +6,7 @@
 
             <corners android:radius="2dp"/>
 
-            <solid android:color="#33b5e5" />
+            <solid android:color="@color/grayLight" />
 
         </shape>
     </item>
@@ -17,7 +17,7 @@
 
             <corners android:radius="2dp" />
 
-            <solid android:color="@android:color/white" />
+            <solid android:color="@color/orangeLight" />
         </shape>
     </item>
 </layer-list>

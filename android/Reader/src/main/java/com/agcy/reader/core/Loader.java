@@ -18,23 +18,33 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Created by kiolt_000 on 01.11.13.
  */
 public class Loader extends AsyncTask<String, Integer, String>  {
-    String baseUrl = "http://sandbox.feedly.com/v3/profile";
-    String methodName = "";
-    String methodType = "GET";
+    String baseUrl;
+    String methodName;
+    HashMap<String,String> parameters;
+    String methodType;
     Object requestData;
     public void start() {
-        if(getStatus()==Status.PENDING)
+        if(getStatus()==Status.PENDING){
+
             execute();
+        }
         else
             Log.e("agcylog","Ошибка алгоритма - таска должна быть остановлена");
     }
     public void stop(){
         cancel(true);
+    }
+    public Loader(){
+        parameters = new HashMap<String, String>();
+        baseUrl = "http://sandbox.feedly.com/v3/";
+        methodType = "GET";
     }
     @Override
     protected String doInBackground(String... params) {
@@ -51,7 +61,18 @@ public class Loader extends AsyncTask<String, Integer, String>  {
                 httpRequest = new HttpPost();
             }
 
-            URI uri = new URI(baseUrl);
+            String convertedUrl = baseUrl+methodName;
+            if (!parameters.isEmpty()){
+                convertedUrl+="?";
+                for(Map.Entry<String, String> parameter:parameters.entrySet()){
+                    convertedUrl +=
+                            parameter.getKey()+"="+
+                            parameter.getValue().replace("?","%3f")
+                            .replace("#","%23")
+                            .replace("&","%26")+"&";
+                }
+            }
+            URI uri = new URI(convertedUrl);
             httpRequest.setURI(uri);
             httpRequest.addHeader("Authorization", " OAuth "+Feedler.getToken());
 

@@ -7,11 +7,12 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ProgressBar;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.agcy.reader.core.Feedler;
+import com.agcy.reader.core.Imager;
 import com.google.gson.Gson;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 
@@ -21,7 +22,7 @@ public class StartActivity extends Activity {
     View statusView;
     View loginView;
     TextView statusText;
-    ProgressBar statusBar;
+    View statusBar;
     Button signinFeedly;
     Button statusButton;
     @Override
@@ -32,18 +33,18 @@ public class StartActivity extends Activity {
         context = this;
         activity = this;
         statusView = (View) findViewById(R.id.statusView);
-        statusBar = (ProgressBar) findViewById(R.id.startStatusBar);
+        statusBar =  findViewById(R.id.startStatusBar);
         statusText = (TextView) findViewById(R.id.startStatusText);
         loginView = (View) findViewById(R.id.loginView);
         signinFeedly = (Button) findViewById(R.id.signinFeedly);
         statusButton = (Button) findViewById(R.id.startStatusButton);
 
-
         //long id = storage.create();
         //long id2 = storage.get(1);
 
-        Feedler.setAccess(this);
+        Feedler.initialization(context);
 
+        Imager.setImageLoading((ImageView) statusBar);
         if(Feedler.isLogined()){
 
             Toast.makeText(context, "мы залогинены, обновляем ключ", 2).show();
