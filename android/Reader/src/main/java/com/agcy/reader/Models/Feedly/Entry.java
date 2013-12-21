@@ -53,12 +53,14 @@ public class Entry {
         Type collectionType = new TypeToken<ArrayList<Category>>(){}.getType();
         categories = new Gson().fromJson(json, collectionType);
     }
-    public Feed feed;
     public Feed feed(){
-        if(feed==null){
-           feed = Feeds.get(origin.streamId);
-        }
+        Feed feed = Feeds.get(origin.streamId);
+
         return feed;
+    }
+
+    public boolean isRead() {
+        return !unread;
     }
 
 

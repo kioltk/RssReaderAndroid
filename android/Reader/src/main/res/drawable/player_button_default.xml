@@ -1,24 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
     <item
-        android:right="25px"
-        android:left="25px"
-        android:top="25px"
-        android:bottom="25px"
+        android:right="26px"
+        android:left="26px"
+        android:top="26px"
+        android:bottom="26px"
         >
         <shape
 
             >
             <corners
-                android:radius="10px"
+                android:radius="26px"
                 />
-            <gradient
-                android:startColor="#000"
-                android:endColor="#00ffffff"
-                android:gradientRadius="75"
-                android:type="radial"
-                android:centerY="50%"
-                android:centerX="50%"
+            <solid
+                android:color="#000"
                 />
         </shape>
     </item>

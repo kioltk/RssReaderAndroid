@@ -5,6 +5,8 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Build;
 
 import com.agcy.reader.BackgroundActivity;
@@ -27,15 +29,44 @@ public class Notificator {
         notificationManager = (NotificationManager) context.getSystemService(context.NOTIFICATION_SERVICE);
         builder = new Notification.Builder(context);
     }
-    public static void show(String head, String body, int currentProgress,int maxProgress, boolean isPause,boolean isIndeterminated){
+    public static void show(String head, String body, int currentProgress,int maxProgress,boolean isIndeterminated){
 
 
         builder = new Notification.Builder(context);
         builder.setContentTitle(head)
                 .setContentText(body)
-                .setSmallIcon(R.drawable.ic_whiteblack)
-                .setProgress(currentProgress, maxProgress, isIndeterminated);
+                .setProgress(currentProgress, maxProgress, isIndeterminated)
+                .setSmallIcon(R.drawable.ic_whiteblack_very_small)
+        ;
+        Bitmap bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher);
+        builder.setLargeIcon(bm);
 
+        builder.setTicker(body);
+
+        Notification n = builder.build();
+        n.flags |= Notification.FLAG_NO_CLEAR ;
+
+
+        notificationManager.notify(0, n);
+        notifications.add(n);
+
+    }
+
+    public static void show(String head, String body, int currentProgress,int maxProgress, boolean isPause,boolean isIndeterminated){
+
+
+        builder = new Notification.Builder(context);
+        builder.setContentTitle(head)
+
+                .setContentText(body)
+                .setProgress(currentProgress, maxProgress, isIndeterminated)
+                .setSmallIcon(R.drawable.ic_whiteblack_very_small)
+        ;
+
+        Bitmap bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher);
+        builder.setLargeIcon(bm);
+
+        builder.setTicker(body);
         Intent pauseResumeIntent = new Intent(context, BackgroundActivity.class);
         String buttonText = "";
         int buttonIc;
@@ -80,10 +111,7 @@ public class Notificator {
 
         builder .setContentTitle(head)
                 .setContentText(status)
-                .setProgress(maxProgress,currentProgress,isIndeterminated)
-                .setSmallIcon(R.drawable.ic_whiteblack);
-       // mNotifyBuilder.setContentText("curr")
-         //       .setNumber(1);
+                .setProgress(maxProgress, currentProgress, isIndeterminated);
         Notification n = builder.build();
         n.flags |= Notification.FLAG_NO_CLEAR | Notification.PRIORITY_DEFAULT;
 
@@ -98,10 +126,14 @@ public class Notificator {
 
     public static void end() {
         builder = new Notification.Builder(context)
-                .setSmallIcon(R.drawable.ic_whiteblack)
                 .setContentText("All downloads are finished")
                 .setContentTitle("Done")
-                .setTicker("All downloads are finished");
+                .setTicker("All downloads are finished")
+                .setSmallIcon(R.drawable.ic_whiteblack_very_small)
+        ;
+
+        Bitmap bm = BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher);
+        builder.setLargeIcon(bm);
 
         Notification n = builder.build();
         n.flags |= Notification.PRIORITY_DEFAULT;

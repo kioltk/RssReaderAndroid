@@ -18,18 +18,30 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by kiolt_000 on 01.11.13.
  */
-public class Loader extends AsyncTask<String, Integer, String>  {
+public abstract class Loader extends AsyncTask<String, Integer, String>  {
     String baseUrl;
     String methodName;
-    HashMap<String,String> parameters;
+    HashMap<String,Object> parameters;
     String methodType;
     Object requestData;
+    public String parametersConverter(){
+        String stringedParameters = "";
+        for(Map.Entry<String, Object> parameter:parameters.entrySet()){
+            stringedParameters +=
+                    parameter.getKey()+"="+
+                            parameter.getValue().toString().replace("?", "%3f")
+                                    .replace("#","%23")
+                                    .replace("&","%26")+"&";
+        }
+        return stringedParameters;
+    }
     public void start() {
         if(getStatus()==Status.PENDING){
 
@@ -42,7 +54,8 @@ public class Loader extends AsyncTask<String, Integer, String>  {
         cancel(true);
     }
     public Loader(){
-        parameters = new HashMap<String, String>();
+        parameters = new HashMap<String, Object>();
+        listeners = new ArrayList<onEndListener>();
         baseUrl = "http://sandbox.feedly.com/v3/";
         methodType = "GET";
     }
@@ -63,20 +76,13 @@ public class Loader extends AsyncTask<String, Integer, String>  {
 
             String convertedUrl = baseUrl+methodName;
             if (!parameters.isEmpty()){
-                convertedUrl+="?";
-                for(Map.Entry<String, String> parameter:parameters.entrySet()){
-                    convertedUrl +=
-                            parameter.getKey()+"="+
-                            parameter.getValue().replace("?","%3f")
-                            .replace("#","%23")
-                            .replace("&","%26")+"&";
-                }
+                convertedUrl+="?" + parametersConverter();
             }
             URI uri = new URI(convertedUrl);
             httpRequest.setURI(uri);
             httpRequest.addHeader("Authorization", " OAuth "+Feedler.getToken());
 
-            if(requestData!=null){
+            if(requestData!=null && methodType.equals("POST")){
                 httpRequest.addHeader("Content-type", "application/json");
                 httpRequest.addHeader("Accept", "application/json");
                 String json = new Gson().toJson(requestData);
@@ -109,5 +115,30 @@ public class Loader extends AsyncTask<String, Integer, String>  {
         }
         return stringBuffer.toString();
     }
-
+    @Override
+    public void onPostExecute(String result) {
+        Object object = chewData(result);
+        if (!(object instanceof Error))
+            for(onEndListener listener:listeners){
+                listener.toDo(object);
+            }
+        else
+            for(onEndListener listener:listeners){
+                listener.onError((Error) object);
+            }
+    }
+    public void addListener(onEndListener listener){
+        listeners.add(listener);
+    }
+    public ArrayList<onEndListener> listeners;
+    public abstract Object chewData(String response);
+    public abstract Error chewError(String error);
+    public static abstract class onEndListener{
+        public abstract void toDo(Object response);
+        public abstract void onError(Error error);
+    }
+    public static class Error{
+        public String errorId;
+        public String errorMessage;
+    }
 }

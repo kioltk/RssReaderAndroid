@@ -13,8 +13,6 @@ import android.widget.Toast;
 
 import com.agcy.reader.core.Feedler;
 import com.agcy.reader.core.Imager;
-import com.google.gson.Gson;
-import com.loopj.android.http.AsyncHttpResponseHandler;
 
 public class StartActivity extends Activity {
     Context context;
@@ -32,6 +30,7 @@ public class StartActivity extends Activity {
 
         context = this;
         activity = this;
+
         statusView = (View) findViewById(R.id.statusView);
         statusBar =  findViewById(R.id.startStatusBar);
         statusText = (TextView) findViewById(R.id.startStatusText);
@@ -39,18 +38,20 @@ public class StartActivity extends Activity {
         signinFeedly = (Button) findViewById(R.id.signinFeedly);
         statusButton = (Button) findViewById(R.id.startStatusButton);
 
-        //long id = storage.create();
-        //long id2 = storage.get(1);
 
         Feedler.initialization(context);
-
         Imager.setImageLoading((ImageView) statusBar);
+
         if(Feedler.isLogined()){
 
-            Toast.makeText(context, "мы залогинены, обновляем ключ", 2).show();
-            Feedler.updateLogin(loginedStartHandler());
-            statusViewShow("Connecting To Feedly");
 
+            Intent main = new Intent(context, MainActivity.class);
+            startActivity(main);
+
+            Toast.makeText(context, "мы залогинены, обновляем ключ", Toast.LENGTH_SHORT).show();
+
+            statusViewShow("Connecting To Feedly");
+            activity.finish();
         }
         else{
 
@@ -84,50 +85,6 @@ public class StartActivity extends Activity {
         getMenuInflater().inflate(R.menu.start, menu);
         return true;
     }
-    private AsyncHttpResponseHandler loginedStartHandler(){
-        return new AsyncHttpResponseHandler(){
-            @Override
-            public void onStart() {
 
-            }
-
-            @Override
-            public void onSuccess(String response) {
-                Feedler.LoginResponse lr = new Gson().fromJson(response,Feedler.LoginResponse.class);
-
-
-                Toast.makeText(context, response, 2).show();
-                Feedler.initialization(lr);
-                Intent main = new Intent(context, MainActivity.class);
-                startActivity(main);
-                activity.finish();
-            }
-
-            @Override
-            public void onFailure(Throwable e, String response) {
-                Toast.makeText(context, response, 2).show();
-                statusBar.setVisibility(View.GONE);
-                statusText.setText("Check your internet connection");
-                statusButton.setVisibility(View.VISIBLE);
-                statusButton.setText("Retry");
-                statusButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-
-                        statusButton.setVisibility(View.GONE);
-                        statusBar.setVisibility(View.VISIBLE);
-                        statusText.setText("Connecting To Feedly");
-
-                        Feedler.updateLogin(loginedStartHandler());
-                    }
-                });
-            }
-
-            @Override
-            public void onFinish() {
-
-            }
-        };
-    }
 
 }

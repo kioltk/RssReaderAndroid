@@ -40,4 +40,5 @@ dependencies {
     compile files('libs/android-smart-image-view-1.0.0.jar')
     compile files('libs/android-async-http-1.4.3.jar')
     compile files('libs/nineoldandroids-2.4.0.jar')
+    compile files('libs/lambdaj-2.4.jar')
 }

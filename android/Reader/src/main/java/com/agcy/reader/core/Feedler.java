@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.agcy.reader.Models.Feedly.Category;
 import com.agcy.reader.Models.Feedly.Entry;
@@ -16,17 +17,16 @@ import com.agcy.reader.core.Feedly.Categories;
 import com.agcy.reader.core.Feedly.Entries;
 import com.agcy.reader.core.Feedly.Feeds;
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Date;
 
 public class Feedler{
+
     public static SharedPreferences accessStorage;
     public static SharedPreferences dataStorage;
     public static Context context;
@@ -37,25 +37,20 @@ public class Feedler{
     private static String refresh_token;
     private static String access_token;
 
-    public static void initialization(){
-        Categories.initalization();
-        Feeds.initalization();
-        Entries.initalization();
-    }
     public static void initialization(LoginResponse loginResponse) {
         if(loginResponse.refresh_token!=null)
             Feedler.setUpdateToken(loginResponse.refresh_token);
         Feedler.setToken(loginResponse.access_token);
         Feedler.updateIn(loginResponse.expires_in);
-        initialization();
     }
-    public static void initialization(Context context){
+    public static void initialization(Context context)  {
         Feedler.context = context;
         Imager.initialization(context);
         Parser.initialization(context);
         Notificator.initialization(context);
         Feedler.accessStorage = context.getSharedPreferences("Access",Context.MODE_PRIVATE);
         refresh_token  = Feedler.accessStorage.getString("refresh_token", "");
+        access_token = Feedler.accessStorage.getString("access_token","");
 
     }
 
@@ -63,6 +58,7 @@ public class Feedler{
     public static void saveAccess(){
         SharedPreferences.Editor editor = Feedler.accessStorage.edit();
         editor.putString("refresh_token", refresh_token);
+        editor.putString("access_token",access_token);
         editor.apply();
     }
     public static void saveData(){
@@ -114,13 +110,14 @@ public class Feedler{
         tempValues.put("id", feed.id);
         tempValues.put("title", feed.title);
         tempValues.put("website", feed.website);
-        tempValues.put("categories", feed.getCategories());
+        tempValues.put("lastupdate",feed.lastUpdate);
         Storage.save("feed", tempValues);
         tempValues.clear();
         tempValues.put("feedid", feed.id);
 
         for (Category category : feed.categories) {
             tempValues.put("categoryid", category.id);
+            tempValues.put("id",Imager.codeFilename(feed.id+category.id));
             Storage.save("feedCategories", tempValues);
         }
     }
@@ -205,7 +202,6 @@ public class Feedler{
                 Categories.add(category);
             }
             while (cursor.moveToNext());
-            loaded= true;
 
             Log.i("agcylog", "категории загружены через " + (new Date().getTime()-time));
         }
@@ -217,10 +213,9 @@ public class Feedler{
                 feed.id = cursor.getString(cursor.getColumnIndex("id"));
                 feed.website = cursor.getString(cursor.getColumnIndex("website"));
                 feed.title = cursor.getString(cursor.getColumnIndex("title"));
-                //feed.setCategories(cursor.getString(cursor.getColumnIndex("categories")));
+                feed.lastUpdate = cursor.getLong(cursor.getColumnIndex("lastupdate"));
                 Feeds.add(feed);
             }while (cursor.moveToNext());
-            loaded = true;
             Log.i("agcylog", "фиды загружены через " + (new Date().getTime()-time));
         }
 
@@ -245,8 +240,6 @@ public class Feedler{
                 entry.origin.streamId = cursor.getString(d);
                 entry.unread = cursor.getInt(e)>0;
                 entry.visual.url = cursor.getString(f);
-
-
                 entry.published  = cursor.getLong(g);
                 Entries.add(entry);
 
@@ -298,7 +291,6 @@ public class Feedler{
         context.deleteDatabase("webviewCookiesChromium.db");
         context = null;
     }
-
     public static Boolean isLogined() {
         if (refresh_token.equals("")){
             return false;
@@ -333,8 +325,8 @@ public class Feedler{
 
         client.post(loginUrl, handler);
     }
-    public static void updateLogin(AsyncHttpResponseHandler handler) {
-
+    public static void updateLogin() {
+        AsyncHttpResponseHandler handler;
         String grant_type;
         String updateUrl ="http://sandbox.feedly.com/v3/auth/token?";
         grant_type = "refresh_token";
@@ -345,8 +337,29 @@ public class Feedler{
                 "&redirect_uri="+redirect_uri+
                 "&grant_type="+grant_type;
         AsyncHttpClient client = new AsyncHttpClient();
+        handler = new AsyncHttpResponseHandler(){
+            @Override
+            public void onStart() {
 
+            }
 
+            @Override
+            public void onSuccess(String response) {
+                Feedler.LoginResponse lr = new Gson().fromJson(response,Feedler.LoginResponse.class);
+                Toast.makeText(context, response, Toast.LENGTH_SHORT).show();
+                Feedler.initialization(lr);
+            }
+
+            @Override
+            public void onFailure(Throwable e, String response) {
+                Toast.makeText(context, response, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onFinish() {
+
+            }
+        };
         client.post(updateUrl, handler);
     }
     public static void updateIn(int expires_in) {
@@ -354,86 +367,118 @@ public class Feedler{
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             public void run() {
-                AsyncHttpResponseHandler backgroundUpdate = new AsyncHttpResponseHandler(){
-                    @Override
-                    public void onStart() {
-
-                    }
-
-                    @Override
-                    public void onSuccess(String response) {
-                        Feedler.LoginResponse lr = new Gson().fromJson(response,Feedler.LoginResponse.class);
-                        Feedler.setToken(lr.access_token);
-                        Feedler.updateIn(lr.expires_in);
-                    }
-
-                    @Override
-                    public void onFailure(Throwable e, String response) {
-                    }
-
-                    @Override
-                    public void onFinish() {
-
-                    }
-                };
-                updateLogin(backgroundUpdate);
+                updateLogin();
             }
         }, expires_in*1000);
 
     }
 
+
     public static String getToken(){
         return access_token;
     }
-    public static void setToken(String _access_token) {
-        access_token = _access_token;
-    }
-    public static void setUpdateToken(String _refresh_token) {
-        refresh_token = _refresh_token;
+    public static void setToken(String access_token) {
+        Feedler.access_token = access_token;
         saveAccess();
     }
-    private static ArrayList<EntryLoader> downloaders = new ArrayList<EntryLoader>();
+    public static void setUpdateToken(String refresh_token) {
+        Feedler.refresh_token = refresh_token;
+        saveAccess();
+    }
 
+
+
+    private static ArrayList<StreamLoader> downloaders = new ArrayList<StreamLoader>();
+    public static CategoryLoader categoryDownloader;
+    public static FeedLoader feedDownloader;
+    // todo:выдача загрузчиков
+    public static void downloadAll(){
+        if(categoryDownloader==null && feedDownloader == null && downloaders.isEmpty()){
+            Notificator.show("Downloadings processing","It should be faster..",0,0,true);
+            categoryDownloader = new CategoryLoader();
+            feedDownloader = new FeedLoader();
+
+            categoryDownloader.addListener(new Loader.onEndListener() {
+                @Override
+                public void toDo(Object response) {
+                    categoryDownloader = null;
+                    feedDownloader.start();
+
+                    Notificator.show("Downloading feeds","Wait a moment",0,0,true);
+                }
+
+                @Override
+                public void onError(Loader.Error error) {
+
+                }
+            });
+            feedDownloader.addListener(new Loader.onEndListener() {
+                @Override
+                public void toDo(Object response) {
+                    feedDownloader = null;
+                    downloadEntries();
+                }
+
+                @Override
+                public void onError(Loader.Error error) {
+
+                }
+            });
+
+            categoryDownloader.start();
+
+            Notificator.show("Downloading categories","Wait a moment",0,0,true);
+        }
+    }
     public static void downloadEntries() {
 
         final long time = new Date().getTime();
         Log.i("agcylog", "скачка статей " + time);
-        for(Feed feed:Feeds.list()){
-            EntryLoader entryLoader = new EntryLoader(feed.id,"feed"){
-                @Override
-                public void onPostExecute(String result) {
-                    Log.i("agcylog", "фид загружен" + result);
 
-                    data = result;
-                    chewData();
-                    entryDownloaded();
-                    downloaders.remove(this);
+        StreamLoader.Filter filter = new StreamLoader.Filter(){{ count=100; unreadOnly=true;}};
+        final int size = Feeds.list().size();
+        for(Feed feed:Feeds.list()){
+            filter.newerThan = feed.lastUpdate;
+            final StreamLoader entryLoader = new StreamLoader(feed.id,Stream.TYPE_FEED,filter);
+            final Loader.onEndListener entriesLoadedListener = new Loader.onEndListener() {
+                @Override
+                public void toDo(Object response) {
+
+                    downloaders.remove(entryLoader);
+
+                    Notificator.update("Downloading entries",(size - downloaders.size())  + " from "+ size +" feeds are fetched", size - downloaders.size(), size, false);
                     if(downloaders.isEmpty()){
                         saveData();
                         Log.i("agcylog", "скачано "+Entries.list().size()+" статей за " + time);
-
+                        Notificator.end();
                     }
                     else{
-
                         Log.i("agcylog", "начало загрузки фида " + downloaders.get(0).sourceId);
                         downloaders.get(0).start();
-
                     }
                 }
+
+                @Override
+                public void onError(Loader.Error error) {
+
+                }
             };
+            entryLoader.addListener(entriesLoadedListener);
+
             downloaders.add(entryLoader);
         }
+
+
+
         if(!downloaders.isEmpty()){
             downloaders.get(0).start();
-
             Log.i("agcylog", "начало загрузки статьи");
+
+            Notificator.show("Downloading entries","Wait a moment",0,100,false);
         }
+
     }
-    private static void entryDownloaded(){
-        //Feedler.saveData();
-    }
-    public static CategoryLoader categoryDownloader;
-    public static FeedLoader feedDownloader;
+
 
     public class LoginResponse{
         public String id;
@@ -453,57 +498,149 @@ public class Feedler{
             super();
             methodName = "subscriptions";
         }
-        public String data ="";
-        public void chewData(){
-            ArrayList<Feed> s = new Gson().fromJson(data, new TypeToken<ArrayList<Feed>>() {
-            }.getType());
-            Feeds.add(s);
 
-            saveFeedsAsync(s);
+        @Override
+        public Object chewData(String response) {
+            Object chewerResponse = null;
+            Log.i("agcylog","получен ответ загрузчика "+response);
+            try{
+                ArrayList<Feed> data = new ArrayList<Feed>();
+                try{
+                    data = new Gson().fromJson(response, new TypeToken<ArrayList<Feed>>(){}.getType());
+                    chewerResponse = data;
+                }
+                catch (Exception exp){
+                    Log.e("agcylog","ошибка сервера \\ парсера " + exp.getMessage());
+                    chewerResponse = chewError(response);
+                }
+                Feeds.add(data);
+                saveFeedsAsync(data);
+            }catch(Exception exp){
+                Log.e("agcylog","ошибка сохранения \\ обработки фидов "  + exp.getMessage());
+            }
+            return chewerResponse;
         }
+
+        @Override
+        public Error chewError(String error) {
+            return null;
+        }
+
     }
-    public static class EntryLoader extends Loader{
+    public static class StreamLoader extends Loader{
+
+        @Override
+        public Object chewData(String response) {
+
+            Object chewerResponse = null;
+            Log.i("agcylog","получен ответ загрузчика "+response);
+
+            try{
+                Stream data = new Stream();
+                try{
+                    data = new Gson().fromJson(response, Stream.class);
+                    chewerResponse = data;
+                }catch(Exception exp){
+                    Log.e("agcylog","ошибка сервера \\ парсера " + exp.getMessage());
+                    chewerResponse = chewError(response);
+                }
+
+                if(sourceType==Stream.TYPE_FEED)
+                    Feeds.get(sourceId).lastUpdate = System.currentTimeMillis();
+
+
+                Entries.add(data.items);
+
+            }catch (Exception exp){
+                Log.e("agcylog","ошибка обработки стрима " + exp.getMessage());
+            }
+
+            return chewerResponse;
+        }
+        @Override
+        public Error chewError(String error) {
+            return null;
+        }
+
+        public static class Filter{
+            public int count;
+            public long newerThan;
+            public boolean unreadOnly;
+
+        }
+        public Filter filter;
         public String sourceId;
-        public String sourceType;
-        public EntryLoader(String sourceId,String sourceType  ) {
+        public int sourceType;
+        public void setFilter(Filter filter){
+            this.filter = filter;
+            if(this.filter!=null){
+                if(this.filter.unreadOnly)
+                    parameters.put("unreadOnly", true);
+                if(this.filter.count>0)
+                    parameters.put("count", this.filter.count);
+                if(this.filter.newerThan>0)
+                    parameters.put("continuation",this.filter.newerThan);
+            }
+        }
+        public StreamLoader(String sourceId,int sourceType,Filter filter) {
             super();
             this.sourceId = sourceId;
             this.sourceType = sourceType;
+            setFilter(filter);
             methodName = "streams/contents";
             parameters.put("streamId",sourceId);
-        }
-        public String data ="";
-        public void chewData(){
 
-            Stream s = new Gson().fromJson(data, Stream.class);
-            Entries.add(s.items);
-            //saveEntriesAsync(s.items);
+
         }
+
+
     }
     public static class CategoryLoader extends Loader{
+
         public CategoryLoader() {
             super();
             baseUrl = "http://sandbox.feedly.com/v3/";
             methodName ="categories";
         }
-        public String data ="";
-        public void chewData(){
-            TypeToken<ArrayList<Category>> tok = new TypeToken<ArrayList<Category>>() {
-            };
-            Type type = tok.getType();
-            Gson gson = new Gson();
+        @Override
+        public Object chewData(String response) {
+            Object responseObject = null;
 
+            Log.i("agcylog","получен ответ загрузчика "+response);
             try {
-                ArrayList<Category> s = gson.fromJson(data, type);
-                Categories.add(s);
-                saveCategoriesAsync(s);
-            } catch (JsonSyntaxException e) {
-                String s = e.getMessage();
+                ArrayList<Category> data = new ArrayList<Category>();
+                try{
+                    data = new Gson().fromJson(response, new TypeToken<ArrayList<Category>>() {}.getType());
+                    responseObject = data;
+                }catch (Exception exp){
+                    Log.e("agcylog","ошибка сервера \\ парсера " + exp.getMessage());
+                    responseObject = chewError(response);
+                }
+                Categories.add(data);
+                saveCategoriesAsync(data);
+            } catch (Exception exp) {
+                Log.e("agcylog","ошибка обработки категории " + exp.getMessage());
             }
-
+            return responseObject;
         }
+
+        @Override
+        public Error chewError(String error) {
+            return null;
+        }
+
     }
     public static class ReadMarker extends Loader{
+        @Override
+        public Object chewData(String response) {
+            return null;
+        }
+
+        @Override
+        public Error chewError(String error) {
+            return null;
+        }
+
         public static class Marker{
             public String action;
             public String type;
@@ -532,23 +669,7 @@ public class Feedler{
             this.methodType = "POST";
             baseUrl = "http://sandbox.feedly.com/v3/markers";
         }
-        public String data ="";
-        public void chewData(){
-           /* TypeToken<ArrayList<Category>> tok = new TypeToken<ArrayList<Category>>() {
-            };
-            Type type = tok.getType();
-            Gson gson = new Gson();
 
-            try {
-                ArrayList<Category> s = gson.fromJson(data, type);
-                Categories.add(s);
-            } catch (JsonSyntaxException e) {
-                String s = e.getMessage();
-            }
-            */
-
-        }
     }
-
 
 }

@@ -203,13 +203,13 @@ public class Imager {
         }/**/
     }
 
-    private static String codeFilename(String fileName){
+    public static String codeFilename(String fileName){
         byte[] bytes = fileName.getBytes();
         String coded = "";
         coded = String.format("%040x", new BigInteger(1, fileName.getBytes()));
         return coded;
     }
-    private static String decodeFilename(String codedFileName){
+    public static String decodeFilename(String codedFileName){
 
         StringBuilder output = new StringBuilder();
         for (int i = 0; i < codedFileName.length(); i+=2) {
@@ -333,8 +333,10 @@ public class Imager {
                         if(object!=null){
                             imageView.setScaleType(scaleType);
                             setImageBitmap((Bitmap) object, imageView);
-                        }else
-                            imageView.setImageDrawable(context.getResources().getDrawable( android.R.drawable.ic_delete));
+                        }else{
+                            imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+                            imageView.setImageDrawable(context.getResources().getDrawable( R.drawable.background));
+                        }
                         imageView.clearAnimation();
 
                     }
@@ -360,7 +362,7 @@ public class Imager {
 
         imageView.startAnimation(a);
         imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        //imageView.setBackground(context.getResources().getDrawable(R.drawable.background));
+        // imageView.setImageDrawable(context.getResources().getDrawable( R.drawable.background));
         imageView.setImageDrawable(context.getResources().getDrawable(R.drawable.loading));
     }
     public static void setImageGif(ImageView imageView, Object Gif) {

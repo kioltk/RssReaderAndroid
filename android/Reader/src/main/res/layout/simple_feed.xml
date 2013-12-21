@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+
     android:layout_width="match_parent"
-    android:layout_height="56dp"
-    android:gravity="center_vertical">
+    android:layout_height="70dp">
 
     <RelativeLayout
         android:orientation="horizontal"
-        android:background="@drawable/category_simple"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <com.agcy.reader.CustomViews.SuperImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_margin="16dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_margin="20dp"
             android:id="@+id/icon"
             android:layout_centerVertical="true"
             android:scaleType="fitCenter"/>
@@ -24,9 +22,13 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceLarge"
-            android:text="title"
+            android:text="Хабрахабр \ захабреное \ затраханое и тд"
             android:id="@+id/title"
-            android:textSize="16dp"
+            android:textSize="18dp"
+            android:fontFamily="sans"
+            android:textColor="@color/grayDark"
+            android:singleLine="true"
+            android:layout_marginRight="12dp"
             android:layout_gravity="left|center_vertical"
             android:layout_toLeftOf="@+id/unreadCount"
             android:layout_toRightOf="@+id/icon" />
@@ -34,11 +36,18 @@
             android:id="@+id/unreadCount"
             android:layout_alignParentRight="true"
             android:text="32"
-            android:layout_marginRight="16dp"
+            android:textSize="18dp"
+            android:fontFamily="sans"
+            android:textColor="@color/grayDark"
+            android:layout_marginRight="20dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_centerVertical="true"/>
 
     </RelativeLayout>
-
-</LinearLayout>
+    <View
+        android:background="@color/grayLight"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentBottom="true"/>
+</RelativeLayout>

@@ -32,13 +32,15 @@ public class Storage extends SQLiteOpenHelper {
             + TABLE_FEEDS + "(" + KEY_ID + " TEXT PRIMARY KEY,"
             + " title " + " TEXT, "
             + " website " + " text, "
-            + " categories " + " TEXT " +")";
+            + " lastupdate " + " integer "
+            +")";
     static final String CREATE_TABLE_CATEGORIES = " CREATE TABLE "
             + TABLE_CATEGORIES + " ( " + KEY_ID + " TEXT PRIMARY KEY,"
             + " label " + " TEXT " + " ) ";
     static final String CREATE_TABLE_FEED_CATEGORIES = " CREATE TABLE "
             + TABLE_FEED_CATEGORIES + " ( FEEDID TEXT ,"
-            + " CATEGORYID TEXT" + " ) ";
+            + " CATEGORYID TEXT,"
+            + " id TEXT PRIMARY KEY" + " ) ";
     String DB_NAME = "";
     Context mContext;
     public static Storage _storage;
@@ -78,7 +80,9 @@ public class Storage extends SQLiteOpenHelper {
         try {
 
             Log.i("agcylog","сохраняем "+contentType);
-            db.insert(contentType, null, values);
+            if(db.insert(contentType, null , values)==-1){
+               db.update(contentType,values," id = '"+values.get("id")+"'",null);
+            }
             Log.i("agcylog","сохранено "+contentType);
         }catch (Exception ignored){
             Log.i("agcylog","error"+ignored.getMessage());

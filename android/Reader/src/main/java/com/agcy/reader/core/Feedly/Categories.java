@@ -13,9 +13,9 @@ import java.util.List;
  */
 public class Categories {
 
-    private static HashMap<String,Category> categories;
-    static Category uncategoried;
-    static Category all;
+    private static HashMap<String,Category> categories = new HashMap<String, Category>();
+    static Category uncategoried = new Category(){{id = "uncategoried";label = "Uncategoried";}};
+    static Category all  = new Category(){{id = "all";label="All";}};
     public static Category getAll(){
         return all;
     }
@@ -29,22 +29,9 @@ public class Categories {
         categories.put(category.id,category);
     }
     public static void add(ArrayList<Category> categoriesList) {
-        for(int i = 0; i< categoriesList.size();i++){
-            Category category = categoriesList.get(i);
+        for (Category category : categoriesList) {
             categories.put(category.id, category);
         }
-    }
-    public static void initalization(){
-        categories = new HashMap<String, Category>();
-
-        all = new Category();
-        all.id = "all";
-        all.label = "All";
-
-
-        uncategoried = new Category();
-        uncategoried.id = "uncategoried";
-        uncategoried.label = "Uncategoried";
     }
 
     public static List<Category> list() {
@@ -66,12 +53,8 @@ public class Categories {
 
     public static void chewFeed(Feed feed) {
         if(!feed.categories.isEmpty())
-            for(int i = 0 ; i< feed.categories.size();i++){
-
-                Category categoryTemp = feed.categories.get(i);
-                Category category = get(categoryTemp.id);
-                category.addFeed(feed);
-
+            for(Category categoryTemp:feed.categories){
+                get(categoryTemp.id).addFeed(feed);
             }
         else{
             uncategoried.addFeed(feed);

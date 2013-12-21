@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class Entries {
 
-    private static HashMap<String,Entry> entries;
+    private static HashMap<String,Entry> entries = new HashMap<String, Entry>();
     public static Entry get(String id){
         return entries.get(id);
     }
@@ -19,9 +19,7 @@ public class Entries {
         entries.put(entry.id, entry);
         Feeds.chewEntry(entry);
     }
-    public static void initalization(){
-        entries = new HashMap<String, Entry>();
-    }
+
 
     public static void add(ArrayList<Entry> entriesList) {
         for (Entry entry : entriesList) {

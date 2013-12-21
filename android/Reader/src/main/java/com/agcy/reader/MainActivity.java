@@ -39,12 +39,11 @@ import com.agcy.reader.core.Feedly.Categories;
 import com.agcy.reader.core.Feedly.Entries;
 import com.agcy.reader.core.Feedly.Feeds;
 import com.agcy.reader.core.Imager;
+import com.agcy.reader.core.Loader;
 import com.agcy.reader.core.Speaker;
 import com.agcy.reader.core.Storage;
 
 import java.util.Locale;
-
-;
 
 public class MainActivity extends Activity
         implements NavigationDrawerFragment.NavigationDrawerCallbacks, TextToSpeech.OnInitListener {
@@ -54,6 +53,7 @@ public class MainActivity extends Activity
     static View contentView;
     static View statusView;
     static TextView statusText;
+    static View statusBar;
     static SimpleCategoryAdapter categoryListAdapter;
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -75,8 +75,10 @@ public class MainActivity extends Activity
         contentView =  findViewById(R.id.contentView);
         statusView =  findViewById(R.id.statusView);
         statusText = (TextView) findViewById(R.id.statusText);
+        statusBar = findViewById(R.id.statusBar);
         Log.i("agcylog","loaded");
         Storage.initialization(this);
+        /** todo:листенеры на обновление элементов
         Feedler.categoryDownloader = new Feedler.CategoryLoader() {
             @Override
             public void onPostExecute(String result) {
@@ -93,15 +95,31 @@ public class MainActivity extends Activity
                 data = result;
                 chewData();
                 Feedler.downloadEntries();
-                contentViewShow();
-                categoryListAdapter.updateItems(Categories.list());
 
             }
         };
 
 
-        if(!Feedler.loadData())
+        if(!Feedler.loadData()){
+
             Feedler.categoryDownloader.start();
+        }
+        */
+
+        Feedler.loadData();
+        Feedler.downloadAll();
+        Feedler.feedDownloader.addListener(new Loader.onEndListener() {
+            @Override
+            public void toDo(Object response) {
+                contentViewShow();
+                categoryListAdapter.updateItems(Categories.list());
+            }
+
+            @Override
+            public void onError(Loader.Error error) {
+
+            }
+        });
 
         Intent checkTTSIntent = new Intent();
         checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
@@ -324,9 +342,10 @@ public class MainActivity extends Activity
                            break;
                        case 2:
                            Intent intent1 = new Intent(context, SettingsActivity.class);
-                           //startActivity(intent1);
+                           startActivity(intent1);
                            break;
                        case 0:
+                           /** todo:листенеры на обновление элементов
                            if(Feedler.categoryDownloader==null && Feedler.feedDownloader==null){
                                Feedler.categoryDownloader = new Feedler.CategoryLoader() {
                                    @Override
@@ -348,8 +367,10 @@ public class MainActivity extends Activity
 
                                        Feedler.feedDownloader = null;
                                    }
-                           };
-                           }
+                               };
+
+                           }*/
+                           Feedler.downloadAll();
                            break;
                    }
 
@@ -362,7 +383,7 @@ public class MainActivity extends Activity
 
             View rootView= inflater.inflate(R.layout.fragment_feed, container, false);
             ListView feedView;
-            statusViewShow("Loading feeds");
+            statusViewShow("Loading feeds",true);
             feedListAdapter = new SimpleFeedAdapter(context);
 
             feedView = (ListView) rootView.findViewById(R.id.feedView);
@@ -395,7 +416,7 @@ public class MainActivity extends Activity
             Log.i("agcylog","начинаем отображение статей");
             View rootView= inflater.inflate(R.layout.fragment_entry, container, false);
             ListView entryView;
-            statusViewShow("Loading entries");
+            statusViewShow("Loading entries",true);
             simpleEntryAdapter = new SimpleEntryAdapter(context);
 
             entryView = (ListView) rootView.findViewById(R.id.entryView);
@@ -490,12 +511,15 @@ public class MainActivity extends Activity
             if (Entries.list().isEmpty()){
 
                 Log.i("agcylog","статей нет");
+                statusViewShow("Hey, we can't find any unread entries!",false);
             }
             else{
 
                 Log.i("agcylog","обновляем список");
-                simpleEntryAdapter.updateItems(Entries.list());
+
                 contentViewShow();
+                //Collections.sort(unreadList, new EntryComparator.byDateLast());
+                simpleEntryAdapter.updateItems(Entries.list());
                 Log.i("agcylog", "список обновлен");
             }
 
@@ -504,11 +528,12 @@ public class MainActivity extends Activity
         public View CategoryActivityView(LayoutInflater inflater, ViewGroup container){
             View rootView= inflater.inflate(R.layout.fragment_category, container, false);
 
-            statusViewShow("Category loading");
+            statusViewShow("Category loading",true);
             categoryListAdapter = new SimpleCategoryAdapter(context);
 
             categoryView = (ListView) rootView.findViewById(R.id.categoryView);
             categoryView.setAdapter(categoryListAdapter);
+
             /*
             Loader loader = new Loader(){
                 @Override
@@ -581,7 +606,8 @@ public class MainActivity extends Activity
 
 
             if (Categories.list().isEmpty()){
-
+                // todo: что если категорий нет? Оо
+                statusViewShow("You have to create a few categories first. This function is coming soon, but now you can visit your feedly.",false);
             }
             else{
                 categoryListAdapter.updateItems(Categories.list());
@@ -605,9 +631,10 @@ public class MainActivity extends Activity
     }
 
 
-    public static void statusViewShow(String message){
+    public static void statusViewShow(String message,boolean isIndeterminate){
         contentView.setVisibility(View.GONE);
         statusView.setVisibility(View.VISIBLE);
+
         statusText.setText(message);
 
     }

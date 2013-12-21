@@ -11,10 +11,13 @@ import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.preference.PreferenceScreen;
 import android.preference.RingtonePreference;
 import android.text.TextUtils;
+import android.widget.Button;
 
 import java.util.List;
 
@@ -38,14 +41,23 @@ public class SettingsActivity extends PreferenceActivity {
      */
     private static final boolean ALWAYS_SIMPLE_PREFS = false;
 
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
 
+        // Add a button to the header list.
+        if (hasHeaders()) {
+            Button button = new Button(this);
+            button.setText("Some action");
+
+            setListFooter(button);
+        }
+    }
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
         super.onPostCreate(savedInstanceState);
 
         setupSimplePreferencesScreen();
-        //ActionBar actionBar = getActionBar();
-        //actionBar.setDisplayHomeAsUpEnabled(true);
     }
 
     /**
@@ -60,10 +72,10 @@ public class SettingsActivity extends PreferenceActivity {
         // use the older PreferenceActivity APIs.
 
         // Add 'general' preferences.
-        //addPreferencesFromResource(R.xml.pref_general);
+     /*   addPreferencesFromResource(R.xml.pref_general);
 
         // Add 'notifications' preferences, and a corresponding header.
-        /*
+
         PreferenceCategory fakeHeader = new PreferenceCategory(this);
         fakeHeader.setTitle(R.string.pref_header_notifications);
         PreferenceScreen p = getPreferenceScreen();
@@ -239,13 +251,24 @@ public class SettingsActivity extends PreferenceActivity {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
+
             addPreferencesFromResource(R.xml.pref_data_sync);
+
+            PreferenceCategory fakeHeader;
+            PreferenceScreen p = getPreferenceScreen();
+
+
+            fakeHeader = new PreferenceCategory(getActivity().getApplicationContext());
+            fakeHeader.setTitle("Images");
+            p.addPreference(fakeHeader);
+            addPreferencesFromResource(R.xml.pref_image_sync);
 
             // Bind the summaries of EditText/List/Dialog/Ringtone preferences
             // to their values. When their values change, their summaries are
             // updated to reflect the new value, per the Android Design
             // guidelines.
             bindPreferenceSummaryToValue(findPreference("sync_frequency"));
+            bindPreferenceSummaryToValue(findPreference("sync_auto"));
         }
     }
 }

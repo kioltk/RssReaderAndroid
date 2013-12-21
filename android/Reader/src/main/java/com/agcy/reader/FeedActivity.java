@@ -12,8 +12,6 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 import com.agcy.reader.CustomViews.SimpleFeedAdapter;
-import com.agcy.reader.core.Feedler;
-import com.agcy.reader.core.Feedly.Feeds;
 
 public class FeedActivity extends Activity  {
     private int MY_DATA_CHECK_CODE = 0;
@@ -38,7 +36,7 @@ public class FeedActivity extends Activity  {
         Intent checkTTSIntent = new Intent();
         checkTTSIntent.setAction(TextToSpeech.Engine.ACTION_CHECK_TTS_DATA);
         startActivityForResult(checkTTSIntent, MY_DATA_CHECK_CODE);
-
+        /*
         final Feedler.FeedLoader task = new Feedler.FeedLoader() {
             @Override
             public void onPostExecute(String result) {
@@ -47,7 +45,7 @@ public class FeedActivity extends Activity  {
                 feedListAdapter.updateItems(Feeds.list());
             }
         };
-
+        */
 
 
 

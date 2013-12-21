@@ -23,7 +23,6 @@ import android.widget.Toast;
 import com.agcy.reader.CustomViews.SuperImageView;
 import com.agcy.reader.Models.Feedly.Entry;
 import com.agcy.reader.Models.Feedly.Stream;
-import com.agcy.reader.core.Feedler;
 import com.agcy.reader.core.Feedly.Categories;
 import com.agcy.reader.core.Feedly.Comparators.EntryComparator;
 import com.agcy.reader.core.Feedly.Entries;
@@ -103,6 +102,7 @@ public class EntryActivity extends Activity {
         }else{
             readButton.setImageResource(R.drawable.pause_button);
         }
+        /*
         final Feedler.EntryLoader task = new Feedler.EntryLoader(source.id, sourceType) {
             @Override
             public void onPostExecute(String result) {
@@ -116,7 +116,7 @@ public class EntryActivity extends Activity {
                 entriesAdapter.updateItems(source.items);
 
             }
-        };
+        };*/
         readButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -159,6 +159,7 @@ public class EntryActivity extends Activity {
                 readButton.setImageResource(R.drawable.pause_button);
                 ArrayList arrayList = new ArrayList<String>();
                 arrayList.add(Speaker.currentEntry.id);
+                /** todo:отмечать как прочитано когда читалка дочитала
                 Feedler.ReadMarker marker = new Feedler.ReadMarker("markAsRead","entries",arrayList){
                     @Override
                     public void onPostExecute(String response){
@@ -166,6 +167,8 @@ public class EntryActivity extends Activity {
                     }
                 };
                 marker.start();
+                */
+
                 Entries.markAsRead(currentEntry.id);
             }
 

@@ -90,6 +90,7 @@
     <orderEntry type="library" exported="" name="android-smart-image-view-1.0.0" level="project" />
     <orderEntry type="library" exported="" name="support-v4-19.0.0" level="project" />
     <orderEntry type="library" exported="" name="support-v13-19.0.0" level="project" />
+    <orderEntry type="library" exported="" name="lambdaj-2.4" level="project" />
   </component>
 </module>
 
